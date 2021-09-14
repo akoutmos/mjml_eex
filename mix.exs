@@ -39,7 +39,8 @@ defmodule MjmlEEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:mjml, "~> 1.1.1"}
+      {:mjml, "~> 1.1.1"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 end

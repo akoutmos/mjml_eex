@@ -1,0 +1,5 @@
+%{
+  "mjml": {:hex, :mjml, "1.1.1", "d6e79531883c2265a9a0b31bbd4939237c36ba6fff003d443bab772019479c20", [:mix], [{:rustler, "~> 0.21", [hex: :rustler, repo: "hexpm", optional: false]}], "hexpm", "b5d5b78af1d47ec251faa3620ab21681d972fb38f34c6c5870b8a6b8edc10e6d"},
+  "rustler": {:hex, :rustler, "0.22.0", "e2930f9d6933e910f87526bb0a7f904e32b62a7e838a3ca4a884ee7fdfb957ed", [:mix], [{:toml, "~> 0.5.2", [hex: :toml, repo: "hexpm", optional: false]}], "hexpm", "01f5989dd511ebec09be481e07d3c59773d5373c5061e09d3ebc3ef61811b49d"},
+  "toml": {:hex, :toml, "0.5.2", "e471388a8726d1ce51a6b32f864b8228a1eb8edc907a0edf2bb50eab9321b526", [:mix], [], "hexpm", "f1e3dabef71fb510d015fad18c0e05e7c57281001141504c6b69d94e99750a07"},
+}

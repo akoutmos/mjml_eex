@@ -1,8 +1,6 @@
-defmodule MjmlEexTest do
+defmodule MjmlEExTest do
   use ExUnit.Case
-  doctest MjmlEex
 
-  test "greets the world" do
-    assert MjmlEex.hello() == :world
+  test "Placeholder" do
   end
 end

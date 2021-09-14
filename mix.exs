@@ -5,7 +5,7 @@ defmodule MjmlEEx.MixProject do
     [
       app: :mjml_eex,
       version: "0.1.0",
-      elixir: "~> 1.12.0",
+      elixir: ">= 1.11.0",
       name: "MJML EEx",
       source_url: "https://github.com/akoutmos/mjml_eex",
       homepage_url: "https://hex.pm/packages/mjml_eex",

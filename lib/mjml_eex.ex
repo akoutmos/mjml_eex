@@ -79,15 +79,15 @@ defmodule MjmlEEx do
       end)
       |> Mjml.to_html()
 
-    email_html
-    |> decode_eex_expressions()
-    |> tap(fn output ->
-      if Keyword.get(opts, :debug, false) do
-        IO.puts("---------------- START COMPILED MJML TEMPLATE ----------------")
-        IO.puts(output)
-        IO.puts("---------------- END COMPILED MJML TEMPLATE ----------------")
-      end
-    end)
+    email_output = decode_eex_expressions(email_html)
+
+    if Keyword.get(opts, :debug, false) do
+      IO.puts("---------------- START COMPILED MJML TEMPLATE ----------------")
+      IO.puts(email_output)
+      IO.puts("---------------- END COMPILED MJML TEMPLATE ----------------")
+    end
+
+    email_output
   end
 
   defp decode_eex_expressions(email_document) do

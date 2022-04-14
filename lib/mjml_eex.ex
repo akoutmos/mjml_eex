@@ -25,24 +25,28 @@ defmodule MjmlEEx do
 
     phoenix_html_ast = compile(mjml_template)
 
-    quote do
-      require EEx
+    created_code =
+      quote do
+        @template_path unquote(mjml_template)
+        @external_resource unquote(mjml_template)
 
-      @file unquote(mjml_template)
-      @template_path unquote(mjml_template)
-      @external_resource unquote(mjml_template)
+        @doc "Safely render the MJML template using Phoenix.HTML"
+        def render(assigns) do
+          assigns
+          |> apply_assigns_to_template()
+          |> Phoenix.HTML.safe_to_string()
+        end
 
-      @doc "Safely render the MJML template using Phoenix.HTML"
-      def render(var!(assigns)) do
-        assigns
-        |> apply_assigns_to_template()
-        |> Phoenix.HTML.safe_to_string()
+        defp apply_assigns_to_template(var!(assigns)) do
+          _ = var!(assigns)
+          unquote(phoenix_html_ast)
+        end
       end
 
-      defp apply_assigns_to_template(var!(assigns)) do
-        unquote(phoenix_html_ast)
-      end
-    end
+    created_code
+    |> Macro.to_string()
+
+    created_code
   end
 
   defp compile(path) do

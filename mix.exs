@@ -6,6 +6,7 @@ defmodule MjmlEEx.MixProject do
       app: :mjml_eex,
       version: "0.1.0",
       elixir: ">= 1.11.0",
+      elixirc_paths: elixirc_paths(Mix.env()),
       name: "MJML EEx",
       source_url: "https://github.com/akoutmos/mjml_eex",
       homepage_url: "https://hex.pm/packages/mjml_eex",
@@ -23,6 +24,10 @@ defmodule MjmlEEx.MixProject do
     ]
   end
 
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
   defp package do
     [
       name: "mjml_eex",
@@ -39,7 +44,8 @@ defmodule MjmlEEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:mjml, "~> 1.1.1"},
+      {:mjml, "~> 1.3.2"},
+      {:phoenix_html, "~> 3.2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end

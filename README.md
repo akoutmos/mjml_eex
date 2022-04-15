@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  Easily create beautiful email using <a href="https://mjml.io/" target="_blank">MJML</a> right from Elixir!
+  Easily create beautiful emails using <a href="https://mjml.io/" target="_blank">MJML</a> right from Elixir!
 </p>
 
 <p align="center">

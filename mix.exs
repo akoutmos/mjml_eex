@@ -12,6 +12,14 @@ defmodule MjmlEEx.MixProject do
       homepage_url: "https://hex.pm/packages/mjml_eex",
       description: "A wrapper around https://hex.pm/packages/mjml to easily use MJML with EEx",
       start_permanent: Mix.env() == :prod,
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.github": :test
+      ],
       package: package(),
       deps: deps(),
       docs: docs(),

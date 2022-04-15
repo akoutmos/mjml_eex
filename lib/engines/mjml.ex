@@ -36,8 +36,7 @@ defmodule MjmlEEx.Engines.Mjml do
   end
 
   def handle_expr(state, marker, expr) do
-    encoded_code = Utils.encode_expression(marker, expr)
-    encoded_expression = "__MJML_EEX_START__:#{encoded_code}:__MJML_EEX_END__"
+    encoded_expression = Utils.encode_expression(marker, expr)
 
     %{binary: binary} = state
     %{state | binary: [encoded_expression | binary]}

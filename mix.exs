@@ -13,7 +13,9 @@ defmodule MjmlEEx.MixProject do
       description: "A wrapper around https://hex.pm/packages/mjml to easily use MJML with EEx",
       start_permanent: Mix.env() == :prod,
       package: package(),
-      deps: deps()
+      deps: deps(),
+      docs: docs(),
+      aliases: aliases()
     ]
   end
 
@@ -41,12 +43,46 @@ defmodule MjmlEEx.MixProject do
     ]
   end
 
+  defp docs do
+    [
+      main: "readme",
+      source_ref: "master",
+      logo: "guides/images/logo.svg",
+      extras: ["README.md"]
+    ]
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      # Production deps
       {:mjml, "~> 1.3.2"},
       {:phoenix_html, "~> 3.2.0"},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+
+      # Development deps
+      {:ex_doc, "~> 0.28.2", only: :dev},
+      {:excoveralls, "~> 0.14.4", only: [:test, :dev], runtime: false},
+      {:doctor, "~> 0.18.0", only: :dev},
+      {:credo, "~> 1.6.1", only: :dev},
+      {:git_hooks, "~> 0.7.3", only: [:test, :dev], runtime: false}
     ]
+  end
+
+  defp aliases do
+    [
+      docs: ["docs", &copy_files/1]
+    ]
+  end
+
+  defp copy_files(_) do
+    # Set up directory structure
+    File.mkdir_p!("./doc/guides/images")
+
+    # Copy over image files
+    "./guides/images/"
+    |> File.ls!()
+    |> Enum.each(fn image_file ->
+      File.cp!("./guides/images/#{image_file}", "./doc/guides/images/#{image_file}")
+    end)
   end
 end

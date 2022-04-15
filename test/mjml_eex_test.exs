@@ -63,9 +63,7 @@ defmodule MjmlEExTest do
   describe "ComponentTemplate.render/1" do
     test "should render the document with the head and attribute block" do
       assert ComponentTemplate.render(all_caps: true) =~ "SIGN UP TODAY!!"
-      assert ComponentTemplate.render(all_caps: true) =~ "mj-head"
-      assert ComponentTemplate.render(all_caps: true) =~ "mj-font name=\"Roboto\""
-      assert ComponentTemplate.render(all_caps: true) =~ "mj-attributes"
+      assert ComponentTemplate.render(all_caps: true) =~ "Montserrat, Helvetica, Arial, sans-serif"
     end
   end
 

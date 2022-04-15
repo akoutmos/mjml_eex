@@ -4,7 +4,7 @@ defmodule MjmlEEx.MixProject do
   def project do
     [
       app: :mjml_eex,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: ">= 1.11.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "MJML EEx",
@@ -41,7 +41,7 @@ defmodule MjmlEEx.MixProject do
   defp package do
     [
       name: "mjml_eex",
-      files: ~w(lib mix.exs README.md),
+      files: ~w(lib mix.exs README.md LICENSE CHANGELOG.md),
       licenses: ["MIT"],
       maintainers: ["Alex Koutmos"],
       links: %{

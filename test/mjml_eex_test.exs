@@ -9,6 +9,10 @@ defmodule MjmlEExTest do
     use MjmlEEx, mjml_template: "test_templates/conditional_template.mjml.eex"
   end
 
+  defmodule ComponentTemplate do
+    use MjmlEEx, mjml_template: "test_templates/component_template.mjml.eex"
+  end
+
   describe "BasicTemplate.render/1" do
     test "should raise an error if no assigns are provided" do
       assert_raise ArgumentError, ~r/assign @call_to_action_text not available in template/, fn ->
@@ -28,7 +32,7 @@ defmodule MjmlEExTest do
     end
   end
 
-  describe "ErrorTemplate.render/1" do
+  describe "ErrorTemplate" do
     test "should raise an error if the MJML template fails to compile" do
       assert_raise RuntimeError, ~r/Failed to compile MJML template: \"unexpected element at position 448\"/, fn ->
         defmodule InvalidTemplateOption do
@@ -51,6 +55,25 @@ defmodule MjmlEExTest do
       assert_raise RuntimeError, ~r/The provided :mjml_template does not exist at/, fn ->
         defmodule NotFoundTemplateOption do
           use MjmlEEx, mjml_template: "does_not_exist.mjml.eex"
+        end
+      end
+    end
+  end
+
+  describe "ComponentTemplate.render/1" do
+    test "should render the document with the head and attribute block" do
+      assert ComponentTemplate.render(all_caps: true) =~ "SIGN UP TODAY!!"
+      assert ComponentTemplate.render(all_caps: true) =~ "mj-head"
+      assert ComponentTemplate.render(all_caps: true) =~ "mj-font name=\"Roboto\""
+      assert ComponentTemplate.render(all_caps: true) =~ "mj-attributes"
+    end
+  end
+
+  describe "InvalidComponentTemplate" do
+    test "should fail to compile since the render_component call is not in an = expression" do
+      assert_raise RuntimeError, ~r/render_component can only be invoked inside of an <%= ... %> expression/, fn ->
+        defmodule InvalidTemplateOption do
+          use MjmlEEx, mjml_template: "test_templates/invalid_component_template.mjml.eex"
         end
       end
     end

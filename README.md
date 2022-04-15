@@ -31,7 +31,7 @@
 
 - [Installation](#installation)
 - [Supporting MJML EEx](#supporting-mjml_eex)
-- [Setting Up MJML EEx](#setting-up-mjml_eex)
+- [Using MJML EEx](#setting-up-mjml_eex)
 - [Attribution](#attribution)
 
 ## Installation
@@ -74,7 +74,9 @@ Checkout my [GitHub Sponsorship page](https://github.com/sponsors/akoutmos) if y
   <img align="center" height="125" src="guides/images/your_logo_here.png" alt="Support the project">
 </a>
 
-## Setting Up MJML EEx
+## Using MJML EEx
+
+### Basic Usage
 
 Add `{:mjml_eex, "~> 0.1.0"}` to your `mix.exs` file and run `mix deps.get`. After you have that in place, you
 can go ahead and create a template module like so:
@@ -94,14 +96,49 @@ module path):
     <mj-section>
       <mj-column>
         <mj-divider border-color="#F45E43"></mj-divider>
-        <mj-text font-size="20px" color="#F45E43">Hello MJML EEx!</mj-text>
+        <mj-text font-size="20px" color="#F45E43">Hello <%= @first_name %> <%= @last_name %>!</mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
 </mjml>
 ```
 
-With those in place, you should be all set to go!
+With those two in place, you can now run `BasicTemplate.render(first_name: "Alex", last_name: "Koutmos")` and you
+will get back an HTML document that can be emailed to users.
+
+### Using Functions from Template Module
+
+You can also call functions from your template module if they exist in your MJML EEx template using
+the following module declaration:
+
+```elixir
+defmodule FunctionTemplate do
+  use MjmlEEx, mjml_template: "function_template.mjml.eex"
+
+  defp generate_full_name(first_name, last_name) do
+    "#{first_name} #{last_name}"
+  end
+end
+```
+
+In conjunction with the following template:
+
+```html
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-divider border-color="#F45E43"></mj-divider>
+        <mj-text font-size="20px" color="#F45E43">Hello <%= generate_full_name(@first_name, @last_name) %>!</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+```
+
+In order to render the email you would then call: `FunctionTemplate.render(first_name: "Alex", last_name: "Koutmos")`
+
+### Using Components
 
 ## Attribution
 

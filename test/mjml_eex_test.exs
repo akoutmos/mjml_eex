@@ -13,6 +13,14 @@ defmodule MjmlEExTest do
     use MjmlEEx, mjml_template: "test_templates/component_template.mjml.eex"
   end
 
+  defmodule FunctionTemplate do
+    use MjmlEEx, mjml_template: "test_templates/function_template.mjml.eex"
+
+    defp generate_full_name(first_name, last_name) do
+      "#{first_name} #{last_name}"
+    end
+  end
+
   describe "BasicTemplate.render/1" do
     test "should raise an error if no assigns are provided" do
       assert_raise ArgumentError, ~r/assign @call_to_action_text not available in template/, fn ->
@@ -29,6 +37,12 @@ defmodule MjmlEExTest do
     test "should output the correct button depending on the assigns" do
       assert ConditionalTemplate.render(all_caps: true) =~ "SIGN UP TODAY!!"
       assert ConditionalTemplate.render(all_caps: false) =~ "Sign up today!"
+    end
+  end
+
+  describe "FunctionTemplate.render/1" do
+    test "should output the correct output when a module function is used" do
+      assert FunctionTemplate.render(first_name: "Alex", last_name: "Koutmos") =~ "Alex Koutmos"
     end
   end
 

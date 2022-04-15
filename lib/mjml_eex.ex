@@ -1,6 +1,15 @@
 defmodule MjmlEEx do
   @moduledoc """
-  Documentation for `MjmlEEx`.
+  Documentation for `MjmlEEx` template module. This moule contains the macro
+  that is used to create an MJML EEx template.
+
+  You can use this module like so:
+
+  ```elixir
+  defmodule BasicTemplate do
+    use MjmlEEx, mjml_template: "basic_template.mjml.eex"
+  end
+  ```
   """
 
   alias MjmlEEx.Utils

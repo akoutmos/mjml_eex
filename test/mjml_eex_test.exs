@@ -28,6 +28,16 @@ defmodule MjmlEExTest do
     end
   end
 
+  describe "ErrorTemplate.render/1" do
+    test "should raise an error if the MJML template fails to compile" do
+      assert_raise RuntimeError, ~r/Failed to compile MJML template: \"unexpected element at position 448\"/, fn ->
+        defmodule InvalidTemplateOption do
+          use MjmlEEx, mjml_template: "test_templates/invalid_template.mjml.eex"
+        end
+      end
+    end
+  end
+
   describe "The use macro" do
     test "should fail to compile since a required option is not present" do
       assert_raise RuntimeError, ~r/The :mjml_template option is required./, fn ->

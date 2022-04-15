@@ -61,7 +61,7 @@ defmodule MjmlEEx do
       {:ok, email_html} ->
         email_html
 
-      error ->
+      {:error, error} ->
         raise "Failed to compile MJML template: #{inspect(error)}"
     end
     |> Utils.decode_eex_expressions()

@@ -140,6 +140,52 @@ In order to render the email you would then call: `FunctionTemplate.render(first
 
 ### Using Components
 
+In addition to compiling single MJML EEx templates, you can also create MJML partials and include them
+in other MJML templates AND components using the special `render_component` function. With the following
+modules:
+
+```elixir
+defmodule FunctionTemplate do
+  use MjmlEEx, mjml_template: "component_template.mjml.eex"
+end
+```
+
+```elixir
+defmodule HeadBlock do
+  use MjmlEEx.Component
+
+  @impl true
+  def render(_opts) do
+    """
+    <mj-head>
+      <mj-title>Hello world!</mj-title>
+      <mj-font name="Roboto" href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500"></mj-font>
+    </mj-head>
+    """
+  end
+end
+```
+
+And the following template:
+
+```html
+<mjml>
+  <%= render_component HeadBlock %>
+
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-divider border-color="#F45E43"></mj-divider>
+        <mj-text font-size="20px" color="#F45E43">Hello <%= generate_full_name(@first_name, @last_name) %>!</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+```
+
+Be sure to look at the `MjmlEEx.Component` for additional usage information as you can also pass options
+to your template and use them when generating the partial string.
+
 ## Attribution
 
 - The logo for the project is an edited version of an SVG image from the [unDraw project](https://undraw.co/)

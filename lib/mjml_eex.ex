@@ -10,6 +10,28 @@ defmodule MjmlEEx do
     use MjmlEEx, mjml_template: "basic_template.mjml.eex"
   end
   ```
+
+  Along with the `basic_template.mjml.eex MJML` template located in the same
+  directory as the module containing the following:
+
+  ```html
+  <mjml>
+    <mj-body>
+      <mj-section>
+        <mj-column>
+          <mj-divider border-color="#F45E43"></mj-divider>
+          <mj-text font-size="20px" color="#F45E43">Hello <%= @first_name %> <%= @last_name %>!</mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-body>
+  </mjml>
+  ```
+
+  Once that is in place, you can render the final HTML document by running:
+
+  ```elixir
+  BasicTemplate.render(first_name: "Alex", last_name: "Koutmos")
+  ```
   """
 
   alias MjmlEEx.Utils

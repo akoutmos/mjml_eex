@@ -55,11 +55,15 @@ defmodule MjmlEEx do
       |> EEx.compile_file(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true)
       |> Code.eval_quoted()
 
-    {:ok, email_html} =
-      mjml_document
-      |> Mjml.to_html()
+    mjml_document
+    |> Mjml.to_html()
+    |> case do
+      {:ok, email_html} ->
+        email_html
 
-    email_html
+      error ->
+        raise "Failed to compile MJML template: #{inspect(error)}"
+    end
     |> Utils.decode_eex_expressions()
     |> EEx.compile_string(engine: Phoenix.HTML.Engine, line: 1)
   end

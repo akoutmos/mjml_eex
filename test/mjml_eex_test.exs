@@ -27,4 +27,22 @@ defmodule MjmlEExTest do
       assert ConditionalTemplate.render(all_caps: false) =~ "Sign up today!"
     end
   end
+
+  describe "The use macro" do
+    test "should fail to compile since a required option is not present" do
+      assert_raise RuntimeError, ~r/The :mjml_template option is required./, fn ->
+        defmodule NoTemplateOption do
+          use MjmlEEx
+        end
+      end
+    end
+
+    test "should fail to compile since the :mjml_template option points to a non-existent file" do
+      assert_raise RuntimeError, ~r/The provided :mjml_template does not exist at/, fn ->
+        defmodule NotFoundTemplateOption do
+          use MjmlEEx, mjml_template: "does_not_exist.mjml.eex"
+        end
+      end
+    end
+  end
 end

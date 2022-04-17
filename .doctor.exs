@@ -1,7 +1,7 @@
 %Doctor.Config{
   exception_moduledoc_required: true,
   failed: false,
-  ignore_modules: [MjmlEEx],
+  ignore_modules: [MjmlEEx, MjmlEEx.Layout],
   ignore_paths: [],
   min_module_doc_coverage: 40,
   min_module_spec_coverage: 0,

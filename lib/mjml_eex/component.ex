@@ -34,7 +34,7 @@ defmodule MjmlEEx.Component do
     def render(opts) do
       \"""
       <mj-head>
-        <mj-title><%= opts[:title] %></mj-title>
+        <mj-title>\#{opts[:title]}</mj-title>
         <mj-font name="Roboto" href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500"></mj-font>
       </mj-head>
       \"""
@@ -56,7 +56,7 @@ defmodule MjmlEEx.Component do
 
       @impl true
       def render(_opts) do
-        raise "Your MjmlEEx component must implement a render/1 callback"
+        raise "Your MjmlEEx component must implement a render/1 callback."
       end
 
       defoverridable MjmlEEx.Component

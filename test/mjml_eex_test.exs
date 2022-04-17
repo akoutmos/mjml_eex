@@ -21,6 +21,18 @@ defmodule MjmlEExTest do
     end
   end
 
+  defmodule LayoutTemplate do
+    use MjmlEEx,
+      mjml_template: "test_templates/layout_template.mjml.eex",
+      layout: BaseLayout
+  end
+
+  describe "LayoutTemplate.render/1" do
+    test "should render the template using a layout" do
+      assert LayoutTemplate.render(call_to_action_text: "Click me please!") =~ "Click me please!"
+    end
+  end
+
   describe "BasicTemplate.render/1" do
     test "should raise an error if no assigns are provided" do
       assert_raise ArgumentError, ~r/assign @call_to_action_text not available in template/, fn ->

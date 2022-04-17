@@ -51,10 +51,20 @@ defmodule MjmlEEx do
       end
 
     unless File.exists?(mjml_template) do
-      raise "The provided :mjml_template does not exist at #{inspect(mjml_template)}"
+      raise "The provided :mjml_template does not exist at #{inspect(mjml_template)}."
     end
 
-    phoenix_html_ast = compile(mjml_template)
+    layout_module = Keyword.get(opts, :layout, false)
+
+    phoenix_html_ast =
+      if layout_module do
+        layout_module = Macro.expand(layout_module, __CALLER__)
+
+        Code.ensure_compiled!(layout_module)
+        compile_with_layout(mjml_template, layout_module)
+      else
+        compile_file(mjml_template)
+      end
 
     created_code =
       quote do
@@ -80,10 +90,34 @@ defmodule MjmlEEx do
     created_code
   end
 
-  defp compile(path) do
+  defp compile_file(template_path) do
     {mjml_document, _} =
-      path
+      template_path
       |> EEx.compile_file(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true)
+      |> Code.eval_quoted()
+
+    mjml_document
+    |> Mjml.to_html()
+    |> case do
+      {:ok, email_html} ->
+        email_html
+
+      {:error, error} ->
+        raise "Failed to compile MJML template: #{inspect(error)}"
+    end
+    |> Utils.decode_eex_expressions()
+    |> EEx.compile_string(engine: Phoenix.HTML.Engine, line: 1)
+  end
+
+  defp compile_with_layout(template_path, layout_module) do
+    template_file_contents = File.read!(template_path)
+    pre_inner_content = layout_module.pre_inner_content()
+    post_inner_content = layout_module.post_inner_content()
+
+    {mjml_document, _} =
+      [pre_inner_content, template_file_contents, post_inner_content]
+      |> Enum.join()
+      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true)
       |> Code.eval_quoted()
 
     mjml_document

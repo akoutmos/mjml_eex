@@ -1,13 +1,56 @@
 defmodule MjmlEEx.Layout do
   @moduledoc """
-  This module allows you to define a MJML layouts so that you
-  can create reusable email skeletons.
-  """
+  This module allows you to define an MJML layout so that you
+  can create reusable email skeletons. To use layouts with your
+  MJML emails, create a layout template that contains an
+  `<%= @inner_content %>` expression in it like so:
 
-  @doc """
-  Returns the MJML markup for the layout as a string.
+  ```html
+  <mjml>
+    <mj-head>
+      <mj-title>Say hello to card</mj-title>
+      <mj-font name="Roboto" href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500"></mj-font>
+      <mj-attributes>
+        <mj-all font-family="Montserrat, Helvetica, Arial, sans-serif"></mj-all>
+        <mj-text font-weight="400" font-size="16px" color="#000000" line-height="24px"></mj-text>
+        <mj-section padding="<%= @padding %>"></mj-section>
+      </mj-attributes>
+    </mj-head>
+
+    <%= @inner_content %>
+  </mjml>
+  ```
+
+  You can also include additional assigns like `@padding` in this
+  example. Just make sure that you provide that assign when you
+  are rendering the final template. With that in place, you can
+  define a layout module like so
+
+  ```elixir
+  defmodule BaseLayout do
+    use MjmlEEx.Layout, mjml_layout: "base_layout.mjml.eex"
+  end
+  ```
+
+  And then use it in conjunction with your templates like so:
+
+  ```elixir
+  defmodule MyTemplate do
+    use MjmlEEx,
+     mjml_template: "my_template.mjml.eex",
+      layout: BaseLayout
+  end
+  ```
+
+  Then in your template, all you need to provide are the portions that
+  you need to complete the layout:
+
+  ```html
+  <mj-body>
+    ...
+  </mj-body>
+  ```
   """
-  @callback render(opts :: keyword()) :: String.t()
 
   defmacro __using__(opts) do
     mjml_layout =

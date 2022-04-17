@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2021-04-18
+
+### Added
+
+- Ability to inject a template into a layout
+
 ## [0.2.0] - 2021-04-15
 
 ### Added

@@ -186,6 +186,57 @@ And the following template:
 Be sure to look at the `MjmlEEx.Component` for additional usage information as you can also pass options
 to your template and use them when generating the partial string.
 
+### Using Layouts
+
+Often times, you'll want to create an Email skeleton or layout using MJML, and then inject your template into that
+layout. MJML EEx supports this functionality which makes it really easy to have business branded emails application
+wide without having to copy and paste the same boilerplate in every template.
+
+To create a layout, define a layout module like so:
+
+```elixir
+defmodule BaseLayout do
+  use MjmlEEx.Layout, mjml_layout: "base_layout.mjml.eex"
+end
+```
+
+And an accompanying layout like so:
+
+```html
+<mjml>
+  <mj-head>
+    <mj-title>Say hello to card</mj-title>
+    <mj-font name="Roboto" href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500"></mj-font>
+    <mj-attributes>
+      <mj-all font-family="Montserrat, Helvetica, Arial, sans-serif"></mj-all>
+      <mj-text font-weight="400" font-size="16px" color="#000000" line-height="24px"></mj-text>
+      <mj-section padding="<%= @padding %>"></mj-section>
+    </mj-attributes>
+  </mj-head>
+
+  <%= @inner_content %>
+</mjml>
+```
+
+As you can see, you can include assigns in your layout template (like `@padding`), but you also need to
+include a mandatory `@inner_content` expression. That way, MJML EEx knowns where to inject your template
+into the layout. With that in place, you just need to tell your template module what layout to use (if
+you are using a layout that is):
+
+```elixir
+defmodule MyTemplate do
+  use MjmlEEx,
+    mjml_template: "my_template.mjml.eex",
+    layout: BaseLayout
+end
+```
+
+And your template file can contain merely the parts that you need for that particular template:
+
+```html
+<mj-body> ... </mj-body>
+```
+
 ## Attribution
 
 - The logo for the project is an edited version of an SVG image from the [unDraw project](https://undraw.co/)

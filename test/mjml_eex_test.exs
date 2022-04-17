@@ -33,6 +33,18 @@ defmodule MjmlEExTest do
       layout: BaseLayout
   end
 
+  defmodule AssignsLayout do
+    @moduledoc false
+
+    use MjmlEEx.Layout, mjml_layout: "test_layouts/assigns_layout.mjml.eex"
+  end
+
+  defmodule AssignsLayoutTemplate do
+    use MjmlEEx,
+      mjml_template: "test_templates/layout_template.mjml.eex",
+      layout: AssignsLayout
+  end
+
   describe "BasicTemplate.render/1" do
     test "should raise an error if no assigns are provided" do
       assert_raise ArgumentError, ~r/assign @call_to_action_text not available in template/, fn ->
@@ -115,7 +127,19 @@ defmodule MjmlEExTest do
     end
   end
 
-  describe "InvalidLayoutTemplate" do
+  describe "AssignsTemplate.render/1" do
+    test "should raise an error if no assigns are provided" do
+      assert_raise ArgumentError, ~r/assign @padding not available in template/, fn ->
+        AssignsLayoutTemplate.render([])
+      end
+    end
+
+    test "should render the template using a layout" do
+      assert AssignsLayoutTemplate.render(call_to_action_text: "Click me please!", padding: "0px") =~ "Click me please!"
+    end
+  end
+
+  describe "InvalidLayout" do
     test "should fail to compile since the layout contains no @inner_content expressions" do
       assert_raise RuntimeError, ~r/The provided :mjml_layout must contain one <%= @inner_content %> expression./, fn ->
         defmodule InvalidLayout do
@@ -125,7 +149,7 @@ defmodule MjmlEExTest do
     end
   end
 
-  describe "OtherInvalidLayoutTemplate" do
+  describe "OtherInvalidLayout" do
     test "should fail to compile since the layout contains 2 @inner_content expressions" do
       assert_raise RuntimeError,
                    ~r/The provided :mjml_layout contains multiple <%= @inner_content %> expressions./,
@@ -134,6 +158,26 @@ defmodule MjmlEExTest do
                        use MjmlEEx.Layout, mjml_layout: "test_layouts/other_invalid_layout.mjml.eex"
                      end
                    end
+    end
+  end
+
+  describe "MissingOptionLayout" do
+    test "should fail to compile since the use statement is missing a required option" do
+      assert_raise RuntimeError, ~r/The :mjml_layout option is required./, fn ->
+        defmodule MissingOptionLayout do
+          use MjmlEEx.Layout
+        end
+      end
+    end
+  end
+
+  describe "MissingFileLayout" do
+    test "should fail to compile since the use statement is missing a required option" do
+      assert_raise RuntimeError, ~r/The provided :mjml_layout does not exist at/, fn ->
+        defmodule MissingFileLayout do
+          use MjmlEEx.Layout, mjml_layout: "invalid/path/to/layout.mjml.eex"
+        end
+      end
     end
   end
 end

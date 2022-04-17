@@ -33,18 +33,6 @@ defmodule MjmlEExTest do
       layout: BaseLayout
   end
 
-  describe "LayoutTemplate.render/1" do
-    test "should raise an error if no assigns are provided" do
-      assert_raise ArgumentError, ~r/assign @call_to_action_text not available in template/, fn ->
-        LayoutTemplate.render([])
-      end
-    end
-
-    test "should render the template using a layout" do
-      assert LayoutTemplate.render(call_to_action_text: "Click me please!") =~ "Click me please!"
-    end
-  end
-
   describe "BasicTemplate.render/1" do
     test "should raise an error if no assigns are provided" do
       assert_raise ArgumentError, ~r/assign @call_to_action_text not available in template/, fn ->
@@ -112,6 +100,40 @@ defmodule MjmlEExTest do
           use MjmlEEx, mjml_template: "test_templates/invalid_component_template.mjml.eex"
         end
       end
+    end
+  end
+
+  describe "LayoutTemplate.render/1" do
+    test "should raise an error if no assigns are provided" do
+      assert_raise ArgumentError, ~r/assign @call_to_action_text not available in template/, fn ->
+        LayoutTemplate.render([])
+      end
+    end
+
+    test "should render the template using a layout" do
+      assert LayoutTemplate.render(call_to_action_text: "Click me please!") =~ "Click me please!"
+    end
+  end
+
+  describe "InvalidLayoutTemplate" do
+    test "should fail to compile since the layout contains no @inner_content expressions" do
+      assert_raise RuntimeError, ~r/The provided :mjml_layout must contain one <%= @inner_content %> expression./, fn ->
+        defmodule InvalidLayout do
+          use MjmlEEx.Layout, mjml_layout: "test_layouts/invalid_layout.mjml.eex"
+        end
+      end
+    end
+  end
+
+  describe "OtherInvalidLayoutTemplate" do
+    test "should fail to compile since the layout contains 2 @inner_content expressions" do
+      assert_raise RuntimeError,
+                   ~r/The provided :mjml_layout contains multiple <%= @inner_content %> expressions./,
+                   fn ->
+                     defmodule OtherInvalidLayout do
+                       use MjmlEEx.Layout, mjml_layout: "test_layouts/other_invalid_layout.mjml.eex"
+                     end
+                   end
     end
   end
 end

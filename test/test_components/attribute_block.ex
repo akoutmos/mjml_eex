@@ -1,6 +1,6 @@
 defmodule MjmlEEx.TestComponents.AttributeBlock do
   @moduledoc """
-  This module defines the MJML component for the shared attibute block.
+  This module defines the MJML component for the shared attribute block.
   """
 
   use MjmlEEx.Component

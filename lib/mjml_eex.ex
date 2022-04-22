@@ -71,6 +71,10 @@ defmodule MjmlEEx do
         @template_path unquote(mjml_template)
         @external_resource unquote(mjml_template)
 
+        if unquote(layout_module) do
+          @external_resource unquote(layout_module).__layout_file__()
+        end
+
         @doc "Safely render the MJML template using Phoenix.HTML"
         def render(assigns) do
           assigns

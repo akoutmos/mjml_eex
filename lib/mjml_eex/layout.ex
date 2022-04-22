@@ -89,6 +89,8 @@ defmodule MjmlEEx.Layout do
       end
 
     quote do
+      @external_resource unquote(mjml_layout)
+
       @doc false
       def pre_inner_content do
         unquote(pre_inner_content)
@@ -97,6 +99,11 @@ defmodule MjmlEEx.Layout do
       @doc false
       def post_inner_content do
         unquote(post_inner_content)
+      end
+
+      @doc false
+      def __layout_file__ do
+        unquote(mjml_layout)
       end
     end
   end

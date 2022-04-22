@@ -37,7 +37,7 @@ defmodule MjmlEEx.Layout do
   ```elixir
   defmodule MyTemplate do
     use MjmlEEx,
-     mjml_template: "my_template.mjml.eex",
+      mjml_template: "my_template.mjml.eex",
       layout: BaseLayout
   end
   ```

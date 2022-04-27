@@ -42,7 +42,7 @@ dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:mjml_eex, "~> 0.3.0"}
+    {:mjml_eex, "~> 0.4.0"}
   ]
 end
 ```
@@ -78,7 +78,7 @@ Checkout my [GitHub Sponsorship page](https://github.com/sponsors/akoutmos) if y
 
 ### Basic Usage
 
-Add `{:mjml_eex, "~> 0.3.0"}` to your `mix.exs` file and run `mix deps.get`. After you have that in place, you
+Add `{:mjml_eex, "~> 0.4.0"}` to your `mix.exs` file and run `mix deps.get`. After you have that in place, you
 can go ahead and create a template module like so:
 
 ```elixir

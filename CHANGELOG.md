@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2021-04-27
+
+### Fixed
+
+- Calls to `render_component` now evaluate the AST aliases in the context of the `__CALLER__`
+- EEx templates, components and layouts are tokenized prior to going through the MJML EEx engine as not to escape MJML content
+
 ## [0.3.0] - 2021-04-17
 
 ### Added

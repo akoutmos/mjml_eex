@@ -8,7 +8,13 @@ defmodule MjmlEEx.Engines.Mjml do
   @behaviour EEx.Engine
 
   @impl true
-  defdelegate init(opts), to: EEx.Engine
+  def init(opts) do
+    {caller, remaining_opts} = Keyword.pop!(opts, :caller)
+
+    remaining_opts
+    |> EEx.Engine.init()
+    |> Map.put(:caller, caller)
+  end
 
   @impl true
   defdelegate handle_body(state), to: EEx.Engine
@@ -23,31 +29,32 @@ defmodule MjmlEEx.Engines.Mjml do
   defdelegate handle_text(state, meta, text), to: EEx.Engine
 
   @impl true
-  def handle_expr(state, "=", {:render_component, _, [{:__aliases__, _, module}]}) do
-    do_render_component(state, module, [])
+  def handle_expr(state, "=", {:render_component, _, [{:__aliases__, _, _module} = aliases]}) do
+    module = Macro.expand(aliases, state.caller)
+
+    do_render_component(state, module, [], state.caller)
   end
 
-  def handle_expr(state, "=", {:render_component, _, [{:__aliases__, _, module}, opts]}) do
-    do_render_component(state, module, opts)
+  def handle_expr(state, "=", {:render_component, _, [{:__aliases__, _, _module} = aliases, opts]}) do
+    module = Macro.expand(aliases, state.caller)
+
+    do_render_component(state, module, opts, state.caller)
   end
 
   def handle_expr(_state, _marker, {:render_component, _, _}) do
     raise "render_component can only be invoked inside of an <%= ... %> expression"
   end
 
-  def handle_expr(state, marker, expr) do
-    encoded_expression = Utils.encode_expression(marker, expr)
-
-    %{binary: binary} = state
-    %{state | binary: [encoded_expression | binary]}
+  def handle_expr(_state, marker, expr) do
+    raise "Unescaped expression. This should never happen and is most likely a bug in MJML EEx: <%#{marker} #{Macro.to_string(expr)} %>"
   end
 
-  defp do_render_component(state, module_alias_list, opts) do
+  defp do_render_component(state, module, opts, caller) do
     {mjml_component, _} =
-      module_alias_list
-      |> Module.concat()
+      module
       |> apply(:render, [opts])
-      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true)
+      |> Utils.escape_eex_expressions()
+      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller)
       |> Code.eval_quoted()
 
     %{binary: binary} = state

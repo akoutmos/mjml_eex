@@ -56,14 +56,14 @@ defmodule MjmlEEx do
 
     layout_module = Keyword.get(opts, :layout, false)
 
-    phoenix_html_ast =
+    {phoenix_html_ast, escaped_mjml_document} =
       if layout_module do
         layout_module = Macro.expand(layout_module, __CALLER__)
 
         Code.ensure_compiled!(layout_module)
-        compile_with_layout(mjml_template, layout_module)
+        compile_with_layout(mjml_template, layout_module, __CALLER__)
       else
-        compile_file(mjml_template)
+        compile_file(mjml_template, __CALLER__)
       end
 
     created_code =
@@ -73,6 +73,11 @@ defmodule MjmlEEx do
 
         if unquote(layout_module) do
           @external_resource unquote(layout_module).__layout_file__()
+        end
+
+        @doc "Returns the escaped MJML template. Useful for debugging rendering issues."
+        def debug_mjml_template do
+          unquote(escaped_mjml_document)
         end
 
         @doc "Safely render the MJML template using Phoenix.HTML"
@@ -94,16 +99,18 @@ defmodule MjmlEEx do
     created_code
   end
 
-  defp compile_file(template_path) do
+  defp compile_file(template_path, caller) do
     {mjml_document, _} =
       template_path
-      |> EEx.compile_file(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true)
+      |> File.read!()
+      |> Utils.escape_eex_expressions()
+      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller)
       |> Code.eval_quoted()
 
-    compile_mjml_document(mjml_document)
+    {compile_mjml_document(mjml_document), mjml_document}
   end
 
-  defp compile_with_layout(template_path, layout_module) do
+  defp compile_with_layout(template_path, layout_module, caller) do
     template_file_contents = File.read!(template_path)
     pre_inner_content = layout_module.pre_inner_content()
     post_inner_content = layout_module.post_inner_content()
@@ -111,10 +118,11 @@ defmodule MjmlEEx do
     {mjml_document, _} =
       [pre_inner_content, template_file_contents, post_inner_content]
       |> Enum.join()
-      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true)
+      |> Utils.escape_eex_expressions()
+      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller)
       |> Code.eval_quoted()
 
-    compile_mjml_document(mjml_document)
+    {compile_mjml_document(mjml_document), mjml_document}
   end
 
   defp compile_mjml_document(mjml_document) do

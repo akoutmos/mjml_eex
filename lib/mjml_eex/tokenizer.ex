@@ -71,9 +71,9 @@ defmodule MjmlEEx.Tokenizer do
 
         marker =
           if key in [:middle_expr, :end_expr] and marker != '' do
-            message =
-              "unexpected beginning of EEx tag \"<%#{marker}\" on \"<%#{marker}#{expr}%>\", " <>
-                "please remove \"#{marker}\""
+            message = """
+            unexpected beginning of EEx tag \"<%#{marker}\" on \"<%#{marker}#{expr}%>\", please remove \"#{marker}\"
+            """
 
             :elixir_errors.erl_warn({line, column}, state.file, message)
             ''

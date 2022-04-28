@@ -2,19 +2,27 @@ defmodule MjmlEExTest do
   use ExUnit.Case
 
   defmodule BasicTemplate do
-    use MjmlEEx, mjml_template: "test_templates/basic_template.mjml.eex"
+    use MjmlEEx,
+      mjml_template: "test_templates/basic_template.mjml.eex",
+      mode: :compile
   end
 
   defmodule ConditionalTemplate do
-    use MjmlEEx, mjml_template: "test_templates/conditional_template.mjml.eex"
+    use MjmlEEx,
+      mjml_template: "test_templates/conditional_template.mjml.eex",
+      mode: :compile
   end
 
   defmodule ComponentTemplate do
-    use MjmlEEx, mjml_template: "test_templates/component_template.mjml.eex"
+    use MjmlEEx,
+      mjml_template: "test_templates/component_template.mjml.eex",
+      mode: :compile
   end
 
   defmodule FunctionTemplate do
-    use MjmlEEx, mjml_template: "test_templates/function_template.mjml.eex"
+    use MjmlEEx,
+      mjml_template: "test_templates/function_template.mjml.eex",
+      mode: :compile
 
     defp generate_full_name(first_name, last_name) do
       "#{first_name} #{last_name}"
@@ -24,24 +32,30 @@ defmodule MjmlEExTest do
   defmodule BaseLayout do
     @moduledoc false
 
-    use MjmlEEx.Layout, mjml_layout: "test_layouts/base_layout.mjml.eex"
+    use MjmlEEx.Layout,
+      mjml_layout: "test_layouts/base_layout.mjml.eex",
+      mode: :compile
   end
 
   defmodule LayoutTemplate do
     use MjmlEEx,
       mjml_template: "test_templates/layout_template.mjml.eex",
+      mode: :compile,
       layout: BaseLayout
   end
 
   defmodule AssignsLayout do
     @moduledoc false
 
-    use MjmlEEx.Layout, mjml_layout: "test_layouts/assigns_layout.mjml.eex"
+    use MjmlEEx.Layout,
+      mjml_layout: "test_layouts/assigns_layout.mjml.eex",
+      mode: :compile
   end
 
   defmodule AssignsLayoutTemplate do
     use MjmlEEx,
       mjml_template: "test_templates/layout_template.mjml.eex",
+      mode: :compile,
       layout: AssignsLayout
   end
 
@@ -74,7 +88,9 @@ defmodule MjmlEExTest do
     test "should raise an error if the MJML template fails to compile" do
       assert_raise RuntimeError, ~r/Failed to compile MJML template: \"unexpected element at position 448\"/, fn ->
         defmodule InvalidTemplateOption do
-          use MjmlEEx, mjml_template: "test_templates/invalid_template.mjml.eex"
+          use MjmlEEx,
+            mjml_template: "test_templates/invalid_template.mjml.eex",
+            mode: :compile
         end
       end
     end
@@ -92,7 +108,9 @@ defmodule MjmlEExTest do
     test "should fail to compile since the :mjml_template option points to a non-existent file" do
       assert_raise RuntimeError, ~r/The provided :mjml_template does not exist at/, fn ->
         defmodule NotFoundTemplateOption do
-          use MjmlEEx, mjml_template: "does_not_exist.mjml.eex"
+          use MjmlEEx,
+            mjml_template: "does_not_exist.mjml.eex",
+            mode: :compile
         end
       end
     end
@@ -109,7 +127,9 @@ defmodule MjmlEExTest do
     test "should fail to compile since the render_component call is not in an = expression" do
       assert_raise RuntimeError, ~r/render_component can only be invoked inside of an <%= ... %> expression/, fn ->
         defmodule InvalidTemplateOption do
-          use MjmlEEx, mjml_template: "test_templates/invalid_component_template.mjml.eex"
+          use MjmlEEx,
+            mjml_template: "test_templates/invalid_component_template.mjml.eex",
+            mode: :compile
         end
       end
     end
@@ -143,7 +163,9 @@ defmodule MjmlEExTest do
     test "should fail to compile since the layout contains no @inner_content expressions" do
       assert_raise RuntimeError, ~r/The provided :mjml_layout must contain one <%= @inner_content %> expression./, fn ->
         defmodule InvalidLayout do
-          use MjmlEEx.Layout, mjml_layout: "test_layouts/invalid_layout.mjml.eex"
+          use MjmlEEx.Layout,
+            mjml_layout: "test_layouts/invalid_layout.mjml.eex",
+            mode: :compile
         end
       end
     end
@@ -155,7 +177,9 @@ defmodule MjmlEExTest do
                    ~r/The provided :mjml_layout contains multiple <%= @inner_content %> expressions./,
                    fn ->
                      defmodule OtherInvalidLayout do
-                       use MjmlEEx.Layout, mjml_layout: "test_layouts/other_invalid_layout.mjml.eex"
+                       use MjmlEEx.Layout,
+                         mjml_layout: "test_layouts/other_invalid_layout.mjml.eex",
+                         mode: :compile
                      end
                    end
     end
@@ -175,7 +199,9 @@ defmodule MjmlEExTest do
     test "should fail to compile since the use statement is missing a required option" do
       assert_raise RuntimeError, ~r/The provided :mjml_layout does not exist at/, fn ->
         defmodule MissingFileLayout do
-          use MjmlEEx.Layout, mjml_layout: "invalid/path/to/layout.mjml.eex"
+          use MjmlEEx.Layout,
+            mode: :compile,
+            mjml_layout: "invalid/path/to/layout.mjml.eex"
         end
       end
     end

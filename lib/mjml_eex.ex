@@ -54,52 +54,112 @@ defmodule MjmlEEx do
       raise "The provided :mjml_template does not exist at #{inspect(mjml_template)}."
     end
 
-    layout_module = Keyword.get(opts, :layout, false)
+    # Get the options passed to the macro or set the defaults
+    layout_module = opts |> Keyword.get(:layout, :none) |> Macro.expand(__CALLER__)
+    compilation_mode = Keyword.get(opts, :mode, :runtime)
 
-    {phoenix_html_ast, escaped_mjml_document} =
-      if layout_module do
-        layout_module = Macro.expand(layout_module, __CALLER__)
+    unless layout_module == :none do
+      Code.ensure_compiled!(layout_module)
+    end
 
-        Code.ensure_compiled!(layout_module)
-        compile_with_layout(mjml_template, layout_module, __CALLER__)
-      else
-        compile_file(mjml_template, __CALLER__)
+    raw_mjml_template =
+      case layout_module do
+        :none ->
+          get_raw_template(mjml_template, __CALLER__)
+
+        module when is_atom(module) ->
+          get_raw_template_with_layout(mjml_template, layout_module, __CALLER__)
+
+        invalid_layout ->
+          raise "#{inspect(invalid_layout)} is an invalid layout option"
       end
 
-    created_code =
-      quote do
-        @template_path unquote(mjml_template)
-        @external_resource unquote(mjml_template)
-
-        if unquote(layout_module) do
-          @external_resource unquote(layout_module).__layout_file__()
-        end
-
-        @doc "Returns the escaped MJML template. Useful for debugging rendering issues."
-        def debug_mjml_template do
-          unquote(escaped_mjml_document)
-        end
-
-        @doc "Safely render the MJML template using Phoenix.HTML"
-        def render(assigns) do
-          assigns
-          |> apply_assigns_to_template()
-          |> Phoenix.HTML.safe_to_string()
-        end
-
-        defp apply_assigns_to_template(var!(assigns)) do
-          _ = var!(assigns)
-          unquote(phoenix_html_ast)
-        end
-      end
-
-    created_code
-    |> Macro.to_string()
-
-    created_code
+    generate_functions(compilation_mode, raw_mjml_template, mjml_template, layout_module)
   end
 
-  defp compile_file(template_path, caller) do
+  defp generate_functions(:runtime, raw_mjml_template, mjml_template_file, layout_module) do
+    phoenix_html_ast = EEx.compile_string(raw_mjml_template, engine: Phoenix.HTML.Engine, line: 1)
+
+    quote do
+      @external_resource unquote(mjml_template_file)
+
+      if unquote(layout_module) != :none do
+        @external_resource unquote(layout_module).__layout_file__()
+      end
+
+      @doc "Returns the raw MJML template. Useful for debugging rendering issues."
+      def debug_mjml_template do
+        unquote(raw_mjml_template)
+      end
+
+      @doc "Safely render the MJML template using Phoenix.HTML"
+      def render(assigns) do
+        assigns
+        |> apply_assigns_to_template()
+        |> Phoenix.HTML.safe_to_string()
+        |> Mjml.to_html()
+        |> case do
+          {:ok, email_html} ->
+            email_html
+
+          {:error, error} ->
+            raise "Failed to compile MJML template: #{inspect(error)}"
+        end
+      end
+
+      defp apply_assigns_to_template(var!(assigns)) do
+        _ = var!(assigns)
+        unquote(phoenix_html_ast)
+      end
+    end
+  end
+
+  defp generate_functions(:compile, raw_mjml_template, mjml_template_file, layout_module) do
+    phoenix_html_ast =
+      raw_mjml_template
+      |> Utils.escape_eex_expressions()
+      |> Mjml.to_html()
+      |> case do
+        {:ok, email_html} ->
+          email_html
+
+        {:error, error} ->
+          raise "Failed to compile MJML template: #{inspect(error)}"
+      end
+      |> Utils.decode_eex_expressions()
+      |> EEx.compile_string(engine: Phoenix.HTML.Engine, line: 1)
+
+    quote do
+      @external_resource unquote(mjml_template_file)
+
+      if unquote(layout_module) != :none do
+        @external_resource unquote(layout_module).__layout_file__()
+      end
+
+      @doc "Returns the escaped MJML template. Useful for debugging rendering issues."
+      def debug_mjml_template do
+        unquote(raw_mjml_template)
+      end
+
+      @doc "Safely render the MJML template using Phoenix.HTML"
+      def render(assigns) do
+        assigns
+        |> apply_assigns_to_template()
+        |> Phoenix.HTML.safe_to_string()
+      end
+
+      defp apply_assigns_to_template(var!(assigns)) do
+        _ = var!(assigns)
+        unquote(phoenix_html_ast)
+      end
+    end
+  end
+
+  defp generate_functions(invalid_mode, _, _, _) do
+    raise "#{inspect(invalid_mode)} is an invalid :mode. Possible values are :runtime or :compile"
+  end
+
+  defp get_raw_template(template_path, caller) do
     {mjml_document, _} =
       template_path
       |> File.read!()
@@ -107,10 +167,10 @@ defmodule MjmlEEx do
       |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller)
       |> Code.eval_quoted()
 
-    {compile_mjml_document(mjml_document), mjml_document}
+    Utils.decode_eex_expressions(mjml_document)
   end
 
-  defp compile_with_layout(template_path, layout_module, caller) do
+  defp get_raw_template_with_layout(template_path, layout_module, caller) do
     template_file_contents = File.read!(template_path)
     pre_inner_content = layout_module.pre_inner_content()
     post_inner_content = layout_module.post_inner_content()
@@ -122,20 +182,6 @@ defmodule MjmlEEx do
       |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller)
       |> Code.eval_quoted()
 
-    {compile_mjml_document(mjml_document), mjml_document}
-  end
-
-  defp compile_mjml_document(mjml_document) do
-    mjml_document
-    |> Mjml.to_html()
-    |> case do
-      {:ok, email_html} ->
-        email_html
-
-      {:error, error} ->
-        raise "Failed to compile MJML template: #{inspect(error)}"
-    end
-    |> Utils.decode_eex_expressions()
-    |> EEx.compile_string(engine: Phoenix.HTML.Engine, line: 1)
+    Utils.decode_eex_expressions(mjml_document)
   end
 end

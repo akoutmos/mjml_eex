@@ -4,7 +4,7 @@ defmodule MjmlEEx.MixProject do
   def project do
     [
       app: :mjml_eex,
-      version: "0.4.0",
+      version: "0.5.0",
       elixir: ">= 1.11.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "MJML EEx",
@@ -68,7 +68,7 @@ defmodule MjmlEEx.MixProject do
       {:phoenix_html, "~> 3.2.0"},
 
       # Development deps
-      {:ex_doc, "~> 0.28.2", only: :dev},
+      {:ex_doc, "~> 0.28.4", only: :dev},
       {:excoveralls, "~> 0.14.4", only: [:test, :dev], runtime: false},
       {:doctor, "~> 0.18.0", only: :dev},
       {:credo, "~> 1.6.1", only: :dev},

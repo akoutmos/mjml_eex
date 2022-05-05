@@ -97,8 +97,8 @@ defmodule MjmlEExTest do
   end
 
   describe "The use macro" do
-    test "should fail to compile since a required option is not present" do
-      assert_raise RuntimeError, ~r/The :mjml_template option is required./, fn ->
+    test "should fail to compile since a valid mjml template can not be found" do
+      assert_raise RuntimeError, ~r/The provided :mjml_template does not exist at/, fn ->
         defmodule NoTemplateOption do
           use MjmlEEx
         end

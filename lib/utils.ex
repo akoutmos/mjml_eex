@@ -54,9 +54,26 @@ defmodule MjmlEEx.Utils do
   end
 
   @doc false
-  def render_dynamic_component(module, opts) do
-    module
-    |> apply(:render, [opts])
+  def render_dynamic_component(module, opts, caller) do
+    caller =
+      caller
+      |> Base.decode64!()
+      |> :erlang.binary_to_term()
+
+    {mjml_component, _} =
+      module
+      |> apply(:render, [opts])
+      |> EEx.compile_string(
+        engine: MjmlEEx.Engines.Mjml,
+        line: 1,
+        trim: true,
+        caller: caller,
+        mode: :runtime,
+        rendering_dynamic_component: true
+      )
+      |> Code.eval_quoted()
+
+    mjml_component
   end
 
   defp reduce_tokens(tokens) do

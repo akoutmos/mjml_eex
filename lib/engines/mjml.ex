@@ -11,11 +11,13 @@ defmodule MjmlEEx.Engines.Mjml do
   def init(opts) do
     {caller, remaining_opts} = Keyword.pop!(opts, :caller)
     {mode, remaining_opts} = Keyword.pop!(remaining_opts, :mode)
+    {rendering_dynamic_component, remaining_opts} = Keyword.pop(remaining_opts, :rendering_dynamic_component, false)
 
     remaining_opts
     |> EEx.Engine.init()
     |> Map.put(:caller, caller)
     |> Map.put(:mode, mode)
+    |> Map.put(:rendering_dynamic_component, rendering_dynamic_component)
   end
 
   @impl true
@@ -33,6 +35,10 @@ defmodule MjmlEEx.Engines.Mjml do
   @impl true
   def handle_expr(%{mode: :compile}, _marker, {:render_dynamic_component, _, _}) do
     raise "render_dynamic_component can only be used with runtime compiled templates. Switch your template to `mode: :runtime`"
+  end
+
+  def handle_expr(%{rendering_dynamic_component: true}, _marker, {:render_dynamic_component, _, _}) do
+    raise "Cannot call `render_dynamic_component` inside of another dynamically rendered component"
   end
 
   def handle_expr(state, "=", {:render_dynamic_component, _, [{:__aliases__, _, _module} = aliases]}) do
@@ -68,7 +74,7 @@ defmodule MjmlEEx.Engines.Mjml do
   end
 
   def handle_expr(_state, marker, expr) do
-    raise "Unescaped expression. This should never happen and is most likely a bug in MJML EEx: <%#{marker} #{Macro.to_string(expr)} %>"
+    raise "Invalid expression. Components can only have `render_static_component` and `render_dynamic_component` EEx expression: <%#{marker} #{Macro.to_string(expr)} %>"
   end
 
   defp do_render_static_component(state, module, opts) do
@@ -84,8 +90,14 @@ defmodule MjmlEEx.Engines.Mjml do
   end
 
   defp do_render_dynamic_component(state, module, opts) do
+    caller =
+      state
+      |> Map.get(:caller)
+      |> :erlang.term_to_binary()
+      |> Base.encode64()
+
     mjml_component =
-      "<%= Phoenix.HTML.raw(MjmlEEx.Utils.render_dynamic_component(#{module}, #{Macro.to_string(opts)})) %>"
+      "<%= Phoenix.HTML.raw(MjmlEEx.Utils.render_dynamic_component(#{module}, #{Macro.to_string(opts)}, \"#{caller}\")) %>"
 
     %{binary: binary} = state
     %{state | binary: [mjml_component | binary]}

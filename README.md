@@ -141,7 +141,7 @@ In order to render the email you would then call: `FunctionTemplate.render(first
 ### Using Components
 
 In addition to compiling single MJML EEx templates, you can also create MJML partials and include them
-in other MJML templates AND components using the special `render_component` function. With the following
+in other MJML templates AND components using the special `render_static_component` function. With the following
 modules:
 
 ```elixir
@@ -170,7 +170,7 @@ And the following template:
 
 ```html
 <mjml>
-  <%= render_component HeadBlock %>
+  <%= render_static_component HeadBlock %>
 
   <mj-body>
     <mj-section>

@@ -22,7 +22,7 @@ defmodule MjmlEEx.Component do
   ```
 
   With that in place, anywhere that you would like to use the component, you can add:
-  `<%= render_component HeadBlock %>` in your MJML EEx template.
+  `<%= render_static_component HeadBlock %>` in your MJML EEx template.
 
   You can also pass options to the render function like so:
 
@@ -42,7 +42,7 @@ defmodule MjmlEEx.Component do
   end
   ```
 
-  And calling it like so: `<%= render_component(HeadBlock, title: "Some really cool title") %>`
+  And calling it like so: `<%= render_static_component(HeadBlock, title: "Some really cool title") %>`
   """
 
   @doc """

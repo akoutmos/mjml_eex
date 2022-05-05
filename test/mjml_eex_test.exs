@@ -124,14 +124,16 @@ defmodule MjmlEExTest do
   end
 
   describe "InvalidComponentTemplate" do
-    test "should fail to compile since the render_component call is not in an = expression" do
-      assert_raise RuntimeError, ~r/render_component can only be invoked inside of an <%= ... %> expression/, fn ->
-        defmodule InvalidTemplateOption do
-          use MjmlEEx,
-            mjml_template: "test_templates/invalid_component_template.mjml.eex",
-            mode: :compile
-        end
-      end
+    test "should fail to compile since the render_static_component call is not in an = expression" do
+      assert_raise RuntimeError,
+                   ~r/render_static_component can only be invoked inside of an <%= ... %> expression/,
+                   fn ->
+                     defmodule InvalidTemplateOption do
+                       use MjmlEEx,
+                         mjml_template: "test_templates/invalid_component_template.mjml.eex",
+                         mode: :compile
+                     end
+                   end
     end
   end
 

@@ -37,18 +37,14 @@ defmodule MjmlEEx do
   alias MjmlEEx.Utils
 
   defmacro __using__(opts) do
-    mjml_template =
-      case Keyword.fetch(opts, :mjml_template) do
-        {:ok, mjml_template} ->
-          %Macro.Env{file: calling_module_file} = __CALLER__
+    # Get some data about the calling module
+    %Macro.Env{file: calling_module_file} = __CALLER__
+    module_directory = Path.dirname(calling_module_file)
+    file_minus_extension = Path.basename(calling_module_file, ".ex")
+    mjml_template_file = Keyword.get(opts, :mjml_template, "#{file_minus_extension}.mjml.eex")
 
-          calling_module_file
-          |> Path.dirname()
-          |> Path.join(mjml_template)
-
-        :error ->
-          raise "The :mjml_template option is required."
-      end
+    # The absolute path of the mjml template
+    mjml_template = Path.join(module_directory, mjml_template_file)
 
     unless File.exists?(mjml_template) do
       raise "The provided :mjml_template does not exist at #{inspect(mjml_template)}."
@@ -65,10 +61,10 @@ defmodule MjmlEEx do
     raw_mjml_template =
       case layout_module do
         :none ->
-          get_raw_template(mjml_template, __CALLER__)
+          get_raw_template(mjml_template, compilation_mode, __CALLER__)
 
         module when is_atom(module) ->
-          get_raw_template_with_layout(mjml_template, layout_module, __CALLER__)
+          get_raw_template_with_layout(mjml_template, layout_module, compilation_mode, __CALLER__)
 
         invalid_layout ->
           raise "#{inspect(invalid_layout)} is an invalid layout option"
@@ -159,18 +155,18 @@ defmodule MjmlEEx do
     raise "#{inspect(invalid_mode)} is an invalid :mode. Possible values are :runtime or :compile"
   end
 
-  defp get_raw_template(template_path, caller) do
+  defp get_raw_template(template_path, mode, caller) do
     {mjml_document, _} =
       template_path
       |> File.read!()
       |> Utils.escape_eex_expressions()
-      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller)
+      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller, mode: mode)
       |> Code.eval_quoted()
 
     Utils.decode_eex_expressions(mjml_document)
   end
 
-  defp get_raw_template_with_layout(template_path, layout_module, caller) do
+  defp get_raw_template_with_layout(template_path, layout_module, mode, caller) do
     template_file_contents = File.read!(template_path)
     pre_inner_content = layout_module.pre_inner_content()
     post_inner_content = layout_module.post_inner_content()
@@ -179,7 +175,7 @@ defmodule MjmlEEx do
       [pre_inner_content, template_file_contents, post_inner_content]
       |> Enum.join()
       |> Utils.escape_eex_expressions()
-      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller)
+      |> EEx.compile_string(engine: MjmlEEx.Engines.Mjml, line: 1, trim: true, caller: caller, mode: mode)
       |> Code.eval_quoted()
 
     Utils.decode_eex_expressions(mjml_document)

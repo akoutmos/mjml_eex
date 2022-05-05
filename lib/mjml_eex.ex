@@ -65,9 +65,6 @@ defmodule MjmlEEx do
 
         module when is_atom(module) ->
           get_raw_template_with_layout(mjml_template, layout_module, compilation_mode, __CALLER__)
-
-        invalid_layout ->
-          raise "#{inspect(invalid_layout)} is an invalid layout option"
       end
 
     generate_functions(compilation_mode, raw_mjml_template, mjml_template, layout_module)

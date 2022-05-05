@@ -19,6 +19,12 @@ defmodule MjmlEExTest do
       mode: :compile
   end
 
+  defmodule DynamicComponentTemplate do
+    use MjmlEEx,
+      mjml_template: "test_templates/dynamic_component_template.mjml.eex",
+      mode: :runtime
+  end
+
   defmodule FunctionTemplate do
     use MjmlEEx,
       mjml_template: "test_templates/function_template.mjml.eex",
@@ -94,6 +100,26 @@ defmodule MjmlEExTest do
         end
       end
     end
+
+    test "should raise an error if the MJML template compile mode is invalid" do
+      assert_raise RuntimeError, ~r/:yolo is an invalid :mode. Possible values are :runtime or :compile/, fn ->
+        defmodule InvalidCompileModeOption do
+          use MjmlEEx,
+            mjml_template: "test_templates/invalid_template.mjml.eex",
+            mode: :yolo
+        end
+      end
+    end
+
+    test "should raise an error if the layout option is invalid" do
+      assert_raise ArgumentError, ~r/could not load module InvalidModule due to reason/, fn ->
+        defmodule InvalidLayoutOption do
+          use MjmlEEx,
+            mjml_template: "test_templates/invalid_template.mjml.eex",
+            layout: InvalidModule
+        end
+      end
+    end
   end
 
   describe "The use macro" do
@@ -120,6 +146,18 @@ defmodule MjmlEExTest do
     test "should render the document with the head and attribute block" do
       assert ComponentTemplate.render(all_caps: true) =~ "SIGN UP TODAY!!"
       assert ComponentTemplate.render(all_caps: true) =~ "Montserrat, Helvetica, Arial, sans-serif"
+    end
+  end
+
+  describe "DynamicComponentTemplate.render/1" do
+    test "should render the document with the appropriate assigns" do
+      rendered_template = DynamicComponentTemplate.render(some_data: 1..5)
+
+      assert rendered_template =~ "Some data - 1"
+      assert rendered_template =~ "Some data - 2"
+      assert rendered_template =~ "Some data - 3"
+      assert rendered_template =~ "Some data - 4"
+      assert rendered_template =~ "Some data - 5"
     end
   end
 

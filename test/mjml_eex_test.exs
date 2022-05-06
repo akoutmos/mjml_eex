@@ -191,6 +191,20 @@ defmodule MjmlEExTest do
     end
   end
 
+  describe "BadExpressionDynamicComponentTemplate" do
+    test "should fail to compile since the render_dynamic_component call is not in an = expression" do
+      assert_raise RuntimeError,
+                   ~r/render_dynamic_component can only be invoked inside of an <%= ... %> expression/,
+                   fn ->
+                     defmodule BadExpressionDynamicComponentTemplate do
+                       use MjmlEEx,
+                         mjml_template: "test_templates/bad_expression_dynamic_component_template.mjml.eex",
+                         mode: :runtime
+                     end
+                   end
+    end
+  end
+
   describe "InvalidComponentTemplate" do
     test "should fail to compile since the render_static_component call is not in an = expression" do
       assert_raise RuntimeError,

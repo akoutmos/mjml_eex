@@ -34,7 +34,7 @@ defmodule MjmlEEx.Engines.Mjml do
 
   @impl true
   def handle_expr(%{mode: :compile}, _marker, {:render_dynamic_component, _, _}) do
-    raise "render_dynamic_component can only be used with runtime compiled templates. Switch your template to `mode: :runtime`"
+    raise "render_dynamic_component can only be used with runtime generated templates. Switch your template to `mode: :runtime`"
   end
 
   def handle_expr(%{rendering_dynamic_component: true}, _marker, {:render_dynamic_component, _, _}) do

@@ -25,6 +25,12 @@ defmodule MjmlEExTest do
       mode: :runtime
   end
 
+  defmodule InvalidDynamicComponentTemplate do
+    use MjmlEEx,
+      mjml_template: "test_templates/invalid_dynamic_component_template.mjml.eex",
+      mode: :runtime
+  end
+
   defmodule FunctionTemplate do
     use MjmlEEx,
       mjml_template: "test_templates/function_template.mjml.eex",
@@ -158,6 +164,30 @@ defmodule MjmlEExTest do
       assert rendered_template =~ "Some data - 3"
       assert rendered_template =~ "Some data - 4"
       assert rendered_template =~ "Some data - 5"
+    end
+  end
+
+  describe "CompileTimeDynamicComponentTemplate.render/1" do
+    test "should raise an error if a dynamic component is rendered at compile time" do
+      assert_raise RuntimeError,
+                   ~r/render_dynamic_component can only be used with runtime generated templates. Switch your template to `mode: :runtime`/,
+                   fn ->
+                     defmodule CompileTimeDynamicComponentTemplate do
+                       use MjmlEEx,
+                         mjml_template: "test_templates/dynamic_component_template.mjml.eex",
+                         mode: :compile
+                     end
+                   end
+    end
+  end
+
+  describe "InvalidDynamicComponentTemplate.render/1" do
+    test "should raise an error as dynamic components cannot render other dynamic components" do
+      assert_raise RuntimeError,
+                   ~r/Cannot call `render_dynamic_component` inside of another dynamically rendered component/,
+                   fn ->
+                     InvalidDynamicComponentTemplate.render(some_data: 1..5)
+                   end
     end
   end
 

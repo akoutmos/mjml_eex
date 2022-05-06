@@ -1,5 +1,5 @@
 <mjml>
-  <%= render_static_component(MjmlEEx.TestComponents.HeadBlock, [title: "Hello!"]) %>
+  <%= render_dynamic_component MjmlEEx.TestComponents.HeadBlock %>
   <mj-body background-color="#F2F2F2">
     <mj-section padding="10px 0 20px 0">
       <mj-column>

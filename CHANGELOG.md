@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - When calling `use MjmlEEx`, if the `:mjml_template` option is not provided, the module attempts to find a template
-  file that has the same file name as the module (with the `.mjml.eex` extension instead of `.ex`).
+  file in the same directory that has the same file name as the module (with the `.mjml.eex` extension instead
+  of `.ex`). This functions similar to how Phoenix and LiveView handle their templates.
 
 ### Removed
 

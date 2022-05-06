@@ -1,7 +1,31 @@
 defmodule MjmlEEx do
   @moduledoc """
   Documentation for `MjmlEEx` template module. This moule contains the macro
-  that is used to create an MJML EEx template.
+  that is used to create an MJML EEx template. The macro can be configured to
+  render the MJML template in a few different ways, so be sure to read the
+  option documentation.
+
+  ## Macro Options
+
+  - `:mjml_template`- A binary that specifies the name of the `.mjml.eex` template that the module will compile. The
+    directory path is relative to the template module. If this option is not provided, the MjmlEEx will look for a
+    file that has the same name as the module but with the `.mjml.ex` extension as opposed to `.ex`.
+
+  - `:mode`- This option defines when the MJML template is actually compiled. The possible values are `:runtime` and
+    `:compile`. When this option is set to `:compile`, the MJML template is compiled into email compatible HTML at
+    compile time. It is suggested that this mode is only used if the template is relatively simple and there are only
+    assigns being used as text or attributes on html elements (as opposed to attributes on MJML elements). The reason
+    for that being that these assigns may be discarded as part of the MJML compilation phase. On the plus side, you
+    do get a performance bump here since the HTML for the email is already generated. When this is set to `:runtime`,
+    the MJML template is compiled at runtime and all the template assigns are applied prior to the MJML compilation
+    phase. These means that there is a performance hit since you are compiling the MJML template every time, but the
+    template can use more complex EEx constructs like `for`, `case` and `cond`. The default configuration is `:runtime`.
+
+  - `:layout` - This option defines what layout the template should be injected into prior to rendering the template.
+    This is useful if you want to have reusable email templates in order to keep your email code DRY and reusable.
+    Your template will then be injected into the layout where the layout defines `<%= inner_content %>`.
+
+  ## Example Usage
 
   You can use this module like so:
 

@@ -183,8 +183,25 @@ And the following template:
 </mjml>
 ```
 
-Be sure to look at the `MjmlEEx.Component` for additional usage information as you can also pass options
-to your template and use them when generating the partial string.
+Be sure to look at the `MjmlEEx.Component` module for additional usage information as you can also pass options to your
+template and use them when generating the partial string. One thing to note is that when using
+`render_static_component`, the data that is passed to the component must be defined at compile time. This means that you
+cannot use any assigns that would bee to be evaluated at runtime. For example, this would raise an error:
+
+```elixir
+<mj-text>
+  <%= render_static_component MyTextComponent, some_data: @some_data %>
+</mj-text>
+```
+
+If you need to render your components dynamically, use `render_dynamic_component` instead and be sure to configure your
+template module like so to generate the email HTML at runtime:
+
+```elixir
+def MyTemplate do
+  use MjmlEEx, mode: :runtime
+end
+```
 
 ### Using Layouts
 

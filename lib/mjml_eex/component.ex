@@ -1,9 +1,17 @@
 defmodule MjmlEEx.Component do
   @moduledoc """
-  This module allows you to define a reusable MJML component that
-  can be injected into an MJML template prior to it being
-  rendered into HTML. To do so, create an `MjmlEEx.Component`
-  module that looks like so:
+  This module allows you to define a reusable MJML component that can be injected into
+  an MJML template prior to it being rendered into HTML. There are two different ways
+  that components can be rendered in templates. The first being `render_static_component`
+  and the other being `render_dynamic_component`. `render_static_component` should be used
+  to render the component when the data provided to the component is known at compile time.
+  If you want to dynamically render a component (make sure that the template is set to
+  `mode: :runtime`) with assigns that are passed to the template, then use
+  `render_dynamic_component`.
+
+  ## Example Usage
+
+  To use an MjmlEEx component, create an `MjmlEEx.Component` module that looks like so:
 
   ```elixir
   defmodule HeadBlock do

@@ -4,6 +4,8 @@ defmodule MjmlEEx.Utils do
   Elixir expressions in MJML EEx templates.
   """
 
+  @mjml_eex_special_expressions [:render_static_component, :render_dynamic_component]
+
   @doc """
   This function encodes the internals of an MJML EEx document
   so that when it is compiled, the EEx expressions don't break
@@ -51,6 +53,29 @@ defmodule MjmlEEx.Utils do
     end
   end
 
+  @doc false
+  def render_dynamic_component(module, opts, caller) do
+    caller =
+      caller
+      |> Base.decode64!()
+      |> :erlang.binary_to_term()
+
+    {mjml_component, _} =
+      module
+      |> apply(:render, [opts])
+      |> EEx.compile_string(
+        engine: MjmlEEx.Engines.Mjml,
+        line: 1,
+        trim: true,
+        caller: caller,
+        mode: :runtime,
+        rendering_dynamic_component: true
+      )
+      |> Code.eval_quoted()
+
+    mjml_component
+  end
+
   defp reduce_tokens(tokens) do
     tokens
     |> Enum.reduce("", fn
@@ -65,7 +90,7 @@ defmodule MjmlEEx.Utils do
           |> Code.string_to_quoted()
 
         case captured_expression do
-          {:ok, {:render_component, _line, _args}} ->
+          {:ok, {special_expression, _line, _args}} when special_expression in @mjml_eex_special_expressions ->
             acc <> "<%#{normalize_marker(marker)} #{List.to_string(expression)} %>"
 
           _ ->

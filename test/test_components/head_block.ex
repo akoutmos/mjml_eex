@@ -15,7 +15,7 @@ defmodule MjmlEEx.TestComponents.HeadBlock do
     <mj-head>
       <mj-title>#{opts[:title]}</mj-title>
       <mj-font name="#{opts[:font]}" href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500"></mj-font>
-      <%= render_component MjmlEEx.TestComponents.AttributeBlock %>
+      <%= render_static_component MjmlEEx.TestComponents.AttributeBlock %>
     </mj-head>
     """
   end

@@ -1,5 +1,5 @@
 <mjml>
-  <% render_static_component(MjmlEEx.TestComponents.HeadBlock, [title: "Hello!"]) %>
+  <%= render_static_component(MjmlEEx.TestComponents.HeadBlock, [title: "Hello!"]) %>
   <mj-body background-color="#F2F2F2">
     <mj-section padding="10px 0 20px 0">
       <mj-column>
@@ -33,8 +33,11 @@
       <mj-column width="100%">
         <mj-image src="http://nimus.de/share/tpl-card/lineshadow.png" alt="" align="center" border="none" padding="0px"></mj-image>
         <mj-text align="center" padding="50px 40px 0 40px" font-weight="300">Marketers/advertisers usually focus their efforts on the people responsible for making the purchase. In many cases, this is an effective approach but in other cases it can make for a totally useless marketing campaign.</mj-text>
+        <%= for index <- @some_data do %>
+          <%= render_dynamic_component MjmlEEx.TestComponents.InvalidDynamicComponent, data: "Some data - #{index}" %>
+        <% end %>
         <mj-button align="center" background-color="#5FA91D" color="#FFFFFF" border-radius="2px" href="#" inner-padding="15px 30px" padding-bottom="100px" padding-top="20px">
-          <%= @call_to_action_text %>
+          SIGN UP TODAY!!
         </mj-button>
       </mj-column>
     </mj-section>

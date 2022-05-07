@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2021-05-06
+
+### Added
+
+- The `render_static_component` function can be used to render components that don't make use of any assigns. For
+  example, in your template you would have: `<%= render_static_component MyCoolComponent, static: "data" %>` and this
+  can be rendered at compile time as well as runtime.
+- The `render_dynamic_component` function can be used to render components that make use of assigns at runtime. For
+  example, in your template you would have: `<%= render_dynamic_component MyCoolComponent, static: @data %>`.
+
+### Changed
+
+- When calling `use MjmlEEx`, if the `:mjml_template` option is not provided, the module attempts to find a template
+  file in the same directory that has the same file name as the module (with the `.mjml.eex` extension instead
+  of `.ex`). This functions similar to how Phoenix and LiveView handle their templates.
+
+### Removed
+
+- `render_component` is no longer available and users should now use `render_static_component` or
+  `render_dynamic_component`.
+
 ## [0.5.0] - 2021-04-28
 
 ### Added

@@ -30,6 +30,11 @@ defmodule MjmlEEx.Compilers.Node do
       |> Stream.cycle()
       |> Enum.reduce_while(initial_reduce_results, fn _, acc ->
         receive do
+          {:DOWN, ^os_pid, _, ^pid, {:exit_status, exit_status}} ->
+            error = "Node mjml CLI compiler exited with status code #{inspect(exit_status)}"
+            existing_errors = Map.get(acc, :stderr, [])
+            {:halt, Map.put(acc, :stderr, [error | existing_errors])}
+
           {:DOWN, ^os_pid, _, ^pid, _} ->
             {:halt, acc}
 

@@ -6,6 +6,11 @@ defmodule NodeCompilerTest do
       mjml_template: "test_templates/basic_template.mjml.eex"
   end
 
+  setup do
+    path = System.get_env("MJML_CLI_PATH", "mjml")
+    Application.put_env(MjmlEEx.Compilers.Node, :compiler_path, path)
+  end
+
   describe "BasicTemplate.render/1" do
     test "should render the template and contain the proper text when passed assigns" do
       Application.put_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Node)

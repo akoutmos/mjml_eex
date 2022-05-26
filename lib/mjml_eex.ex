@@ -94,6 +94,14 @@ defmodule MjmlEEx do
     generate_functions(compilation_mode, raw_mjml_template, mjml_template, layout_module)
   end
 
+  @doc """
+  Get the configured MJML compiler. By default, the `MjmlEEx.Compilers.Rust` compiler
+  is used.
+  """
+  def configured_compiler do
+    Application.get_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Rust)
+  end
+
   defp generate_functions(:runtime, raw_mjml_template, mjml_template_file, layout_module) do
     phoenix_html_ast = EEx.compile_string(raw_mjml_template, engine: Phoenix.HTML.Engine, line: 1)
 
@@ -111,10 +119,12 @@ defmodule MjmlEEx do
 
       @doc "Safely render the MJML template using Phoenix.HTML"
       def render(assigns) do
+        compiler = MjmlEEx.configured_compiler()
+
         assigns
         |> apply_assigns_to_template()
         |> Phoenix.HTML.safe_to_string()
-        |> Mjml.to_html()
+        |> compiler.compile()
         |> case do
           {:ok, email_html} ->
             email_html
@@ -132,10 +142,12 @@ defmodule MjmlEEx do
   end
 
   defp generate_functions(:compile, raw_mjml_template, mjml_template_file, layout_module) do
+    compiler = MjmlEEx.configured_compiler()
+
     phoenix_html_ast =
       raw_mjml_template
       |> Utils.escape_eex_expressions()
-      |> Mjml.to_html()
+      |> compiler.compile()
       |> case do
         {:ok, email_html} ->
           email_html

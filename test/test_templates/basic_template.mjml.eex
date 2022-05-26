@@ -37,7 +37,7 @@
         <mj-text align="center" padding-top="10px" font-weight="500" padding="0px">A Right Media Mix Can Make The Difference.</mj-text>
       </mj-column>
     </mj-section>
-    <mj-section background-url="http://nimus.de/share/tpl-card/bg.jpg" vertical-align="middle" background-size="cover" background-repeat="no-repeat">
+    <mj-section background-url="http://nimus.de/share/tpl-card/bg.jpg" background-size="cover" background-repeat="no-repeat">
       <mj-column width="100%">
         <mj-image src="http://nimus.de/share/tpl-card/lineshadow.png" alt="" align="center" border="none" padding="0px"></mj-image>
         <mj-text align="center" padding="50px 40px 0 40px" font-weight="300">Marketers/advertisers usually focus their efforts on the people responsible for making the purchase. In many cases, this is an effective approach but in other cases it can make for a totally useless marketing campaign.</mj-text>

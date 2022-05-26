@@ -79,8 +79,9 @@ jobs:
         run: mix deps.get
       - name: Install Node MJML compiler
         run: npm install -g mjml
+      - name: Set MJML path env var
+        run: echo "MJML_CLI_PATH=$(npm bin)/mjml" >> $GITHUB_ENV
       - name: ExUnit tests
         env:
           MIX_ENV: test
-          MJML_COMPILER: $(npm bin)/mjml
         run: mix coveralls.github

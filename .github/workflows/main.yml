@@ -69,7 +69,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 15
-          cache: 'npm'
       - name: Restore dependencies cache
         uses: actions/cache@v2
         with:

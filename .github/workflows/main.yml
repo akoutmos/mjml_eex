@@ -79,6 +79,8 @@ jobs:
         run: mix deps.get
       - name: Install Node MJML compiler
         run: npm install -g mjml
+      - name: Add NPM path
+        run: echo $(npm bin) >> $GITHUB_PATH
       - name: ExUnit tests
         env:
           MIX_ENV: test

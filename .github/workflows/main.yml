@@ -84,5 +84,5 @@ jobs:
       - name: ExUnit tests
         env:
           MIX_ENV: test
-          SHELL: bash
+          SHELL: /bin/bash
         run: mix coveralls.github

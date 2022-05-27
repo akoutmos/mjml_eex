@@ -7,14 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] - 2021-05-26
+## [0.7.0] - 2022-05-26
 
 ### Added
 
 - You can now chose your MJML compiler. By default the Rust NIF compiler is used, but there is also an
   adapter for the Node MJML compiler.
 
-## [0.6.0] - 2021-05-06
+## [0.6.0] - 2022-05-06
 
 ### Added
 
@@ -35,26 +35,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `render_component` is no longer available and users should now use `render_static_component` or
   `render_dynamic_component`.
 
-## [0.5.0] - 2021-04-28
+## [0.5.0] - 2022-04-28
 
 ### Added
 
 - Templates can now either be compiled at runtime or at compile time based on the options passed to `use MjmlEEx`
 
-## [0.4.0] - 2021-04-27
+## [0.4.0] - 2022-04-27
 
 ### Fixed
 
 - Calls to `render_component` now evaluate the AST aliases in the context of the `__CALLER__`
 - EEx templates, components and layouts are tokenized prior to going through the MJML EEx engine as not to escape MJML content
 
-## [0.3.0] - 2021-04-17
+## [0.3.0] - 2022-04-17
 
 ### Added
 
 - Ability to inject a template into a layout
 
-## [0.2.0] - 2021-04-15
+## [0.2.0] - 2022-04-15
 
 ### Added
 

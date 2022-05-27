@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2021-05-26
+
+### Added
+
+- You can now chose your MJML compiler. By default the Rust NIF compiler is used, but there is also an
+  adapter for the Node MJML compiler.
+
 ## [0.6.0] - 2021-05-06
 
 ### Added

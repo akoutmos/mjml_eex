@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-07-22
+
+### Changed
+
+- `:erlexec` is now an optional dependency. If you attempt to use the Node compiler without this dependency
+  an error will be raised. The error message contains information on pulling it down and starting the `:erlexec`
+  application.
+
 ## [0.7.0] - 2022-05-26
 
 ### Added

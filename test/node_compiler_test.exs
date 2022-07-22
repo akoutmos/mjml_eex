@@ -25,7 +25,7 @@ defmodule NodeCompilerTest do
       Application.put_env(MjmlEEx.Compilers.Node, :timeout, 5)
 
       assert_raise RuntimeError,
-                   ~r/Node mjml CLI compiler timed out after 10 seconds/,
+                   ~r/Node mjml CLI compiler timed out after 0 second\(s\)/,
                    fn ->
                      BasicTemplate.render(call_to_action_text: "Click me please!")
                    end

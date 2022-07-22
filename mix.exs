@@ -4,7 +4,7 @@ defmodule MjmlEEx.MixProject do
   def project do
     [
       app: :mjml_eex,
-      version: "0.7.0",
+      version: "0.8.0",
       elixir: ">= 1.11.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "MJML EEx",
@@ -30,7 +30,7 @@ defmodule MjmlEEx.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :erlexec]
     ]
   end
 

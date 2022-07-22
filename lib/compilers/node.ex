@@ -70,7 +70,8 @@ if Code.ensure_loaded?(:exec) do
           after
             timeout ->
               :exec.kill(os_pid, :sigterm)
-              error = "Node mjml CLI compiler timed out after 10 seconds"
+              time_in_seconds = System.convert_time_unit(timeout, :millisecond, :second)
+              error = "Node mjml CLI compiler timed out after #{time_in_seconds} second(s)"
               existing_errors = Map.get(acc, :stderr, [])
               {:halt, Map.put(acc, :stderr, [error | existing_errors])}
           end
@@ -87,7 +88,13 @@ if Code.ensure_loaded?(:exec) do
   end
 else
   raise("""
-  In order to use the Node compiler you must also add the optional :erlexec dependency to mix.exs:
+  In order to use the Node compiler you must also update your mix.exs file like so:
+
+  def application do
+    [
+      extra_applications: [..., :erlexec]
+    ]
+  end
 
   defp deps do
     [

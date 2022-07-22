@@ -66,7 +66,7 @@ defmodule MjmlEEx.MixProject do
       # Production deps
       {:mjml, "~> 1.3.2"},
       {:phoenix_html, "~> 3.2.0"},
-      {:erlexec, "~> 1.20"},
+      {:erlexec, "~> 2.0", optional: true},
 
       # Development deps
       {:ex_doc, "~> 0.28.4", only: :dev},

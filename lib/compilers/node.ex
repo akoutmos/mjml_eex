@@ -106,20 +106,29 @@ if Code.ensure_loaded?(:exec) do
     end
   end
 else
-  raise("""
-  In order to use the Node compiler you must also update your mix.exs file like so:
+  defmodule MjmlEEx.Compilers.Node do
+    @moduledoc false
 
-  def application do
-    [
-      extra_applications: [..., :erlexec]
-    ]
-  end
+    @behaviour MjmlEEx.Compiler
 
-  defp deps do
-    [
-      ...
-      {:erlexec, "~> 2.0"}
-    ]
+    @impl true
+    def compile(mjml_template) do
+      raise("""
+      In order to use the Node compiler you must also update your mix.exs file like so:
+
+      def application do
+      [
+        extra_applications: [..., :erlexec]
+      ]
+      end
+
+      defp deps do
+      [
+        ...
+        {:erlexec, "~> 2.0"}
+      ]
+      end
+      """)
+    end
   end
-  """)
 end

@@ -22,6 +22,25 @@ if Code.ensure_loaded?(:exec) do
       timeout: 10_000,
       compiler_path: "mjml"
     ```
+
+    In addition, since the Node compiler is run via `:erlexec`, you will
+    need to add this optional dependency to your `mix.exs` file and also
+    start the optional application:
+
+    ```elixir
+    def application do
+      [
+        extra_applications: [..., :erlexec]
+      ]
+    end
+
+    defp deps do
+      [
+        ...
+        {:erlexec, "~> 2.0"}
+      ]
+    end
+    ```
     """
 
     @behaviour MjmlEEx.Compiler

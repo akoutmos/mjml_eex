@@ -10,7 +10,7 @@ defmodule MjmlEEx.MixProject do
       name: "MJML EEx",
       source_url: "https://github.com/akoutmos/mjml_eex",
       homepage_url: "https://hex.pm/packages/mjml_eex",
-      description: "A wrapper around https://hex.pm/packages/mjml to easily use MJML with EEx",
+      description: "Create emails that WOW your customers using MJML and EEx",
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [

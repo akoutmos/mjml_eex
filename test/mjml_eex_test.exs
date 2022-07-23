@@ -81,6 +81,11 @@ defmodule MjmlEExTest do
     test "should render the template and contain the proper text when passed assigns" do
       assert BasicTemplate.render(call_to_action_text: "Click me please!") =~ "Click me please!"
     end
+
+    test "should escape scripts that are attempted to be added to the template" do
+      assert BasicTemplate.render(call_to_action_text: "<script>alert('Hacked!');</script> Click me please!") =~
+               "&lt;script&gt;alert(&#39;Hacked!&#39;);&lt;/script&gt; Click me please!"
+    end
   end
 
   describe "ConditionalTemplate.render/1" do
@@ -93,6 +98,11 @@ defmodule MjmlEExTest do
   describe "FunctionTemplate.render/1" do
     test "should output the correct output when a module function is used" do
       assert FunctionTemplate.render(first_name: "Alex", last_name: "Koutmos") =~ "Alex Koutmos"
+    end
+
+    test "should escape scripts that are attempted to be added to the template" do
+      assert FunctionTemplate.render(first_name: "<script>alert('Hacked!');</script>", last_name: "Koutmos") =~
+               "&lt;script&gt;alert(&#39;Hacked!&#39;);&lt;/script&gt; Koutmos"
     end
   end
 
@@ -228,6 +238,11 @@ defmodule MjmlEExTest do
 
     test "should render the template using a layout" do
       assert LayoutTemplate.render(call_to_action_text: "Click me please!") =~ "Click me please!"
+    end
+
+    test "should escape scripts that are attempted to be added to the template" do
+      assert LayoutTemplate.render(call_to_action_text: "<script>alert('Hacked!');</script>Click me please!") =~
+               "&lt;script&gt;alert(&#39;Hacked!&#39;);&lt;/script&gt;Click me please!"
     end
   end
 

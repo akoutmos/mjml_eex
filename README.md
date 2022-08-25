@@ -32,6 +32,7 @@
 - [Installation](#installation)
 - [Supporting MJML EEx](#supporting-mjml_eex)
 - [Using MJML EEx](#setting-up-mjml_eex)
+- [Configuration](#configuration)
 - [Attribution](#attribution)
 
 ## Installation
@@ -253,6 +254,23 @@ And your template file can contain merely the parts that you need for that parti
 ```html
 <mj-body> ... </mj-body>
 ```
+
+## Configuration
+
+MJML EEx has support for both the 1st party [NodeJS compiler](https://github.com/mjmlio/mjml) and the 3rd party
+[Rust compiler](https://github.com/jdrouet/mrml). By default, MJML EEx uses the Rust compiler as there is an
+Elixir NIF built with [Rustler](https://github.com/rusterlium/rustler) that packages the Rust
+library for easy use: [mjml_nif](https://github.com/adoptoposs/mjml_nif). By default the Rust compiler is used
+as it does not require you to have NodeJS available.
+
+In order to use the NodeJS compiler, you can provide the following configuration in your `config.exs` file:
+
+```elixir
+config :mjml_eex, compiler: MjmlEEx.Compilers.Node
+```
+
+Be sure to check out the documentation for the `MjmlEEx.Compilers.Node` module as it also requires some
+additional set up.
 
 ## Attribution
 

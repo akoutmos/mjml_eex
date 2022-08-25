@@ -175,6 +175,43 @@ defmodule MjmlEExTest do
       assert rendered_template =~ "Some data - 4"
       assert rendered_template =~ "Some data - 5"
     end
+
+    test "should emit a telemetry event when the rendering starts and completes" do
+      :telemetry.attach_many(
+        "mjml_eex_test_telemetry",
+        [
+          [:mjml_eex, :render, :start],
+          [:mjml_eex, :render, :stop]
+        ],
+        fn event, measurements, metadata, _opts ->
+          send(self(), %{event: event, measurements: measurements, metadata: metadata})
+        end,
+        nil
+      )
+
+      DynamicComponentTemplate.render(some_data: 1..5)
+
+      # Check the start event
+      assert_received %{event: [:mjml_eex, :render, :start], measurements: measurements, metadata: metadata}
+      assert Map.has_key?(measurements, :system_time)
+
+      Enum.each([:compiler, :mode, :assigns, :mjml_template, :mjml_template_file, :layout_module], fn key ->
+        assert Map.has_key?(metadata, key)
+      end)
+
+      # Check the stop event
+      assert_received %{event: [:mjml_eex, :render, :stop], measurements: measurements, metadata: metadata}
+      assert Map.has_key?(measurements, :duration)
+
+      Enum.each(
+        [:compiler, :mode, :assigns, :mjml_template, :mjml_template_file, :layout_module, :rendered_html],
+        fn key ->
+          assert Map.has_key?(metadata, key)
+        end
+      )
+    after
+      :telemetry.detach("mjml_eex_test_telemetry")
+    end
   end
 
   describe "CompileTimeDynamicComponentTemplate.render/1" do

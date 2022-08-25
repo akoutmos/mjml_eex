@@ -15,12 +15,12 @@ if Code.ensure_loaded?(:exec) do
     configration like so (in your `config.exs` file for example):
 
     ```elixir
-    config MjmlEEx,
-      compiler: MjmlEEx.Compilers.Node
-
-    config MjmlEEx.Compilers.Node,
-      timeout: 10_000,
-      compiler_path: "mjml"
+    config :mjml_eex,
+      compiler: MjmlEEx.Compilers.Node,
+      compiler_opts: [
+        timeout: 10_000,
+        path: "mjml"
+    ]
     ```
 
     In addition, since the Node compiler is run via `:erlexec`, you will
@@ -48,8 +48,9 @@ if Code.ensure_loaded?(:exec) do
     @impl true
     def compile(mjml_template) do
       # Get the configs for the compiler
-      timeout = Application.get_env(__MODULE__, :timeout, 10_000)
-      compiler_path = Application.get_env(__MODULE__, :compiler_path, "mjml")
+      compiler_opts = Application.get_env(:mjml_eex, :compiler_opts)
+      timeout = Keyword.get(compiler_opts, :timeout, 10_000)
+      compiler_path = Keyword.get(compiler_opts, :path, "mjml")
 
       # Start the erlexec port
       {:ok, pid, os_pid} =

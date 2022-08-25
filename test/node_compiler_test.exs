@@ -12,21 +12,23 @@ defmodule NodeCompilerTest do
 
   setup do
     path = System.get_env("MJML_CLI_PATH", "mjml")
-    Application.put_env(MjmlEEx.Compilers.Node, :compiler_path, path)
+
+    Application.put_env(:mjml_eex, :compiler, MjmlEEx.Compilers.Node)
+    Application.put_env(:mjml_eex, :compiler_opts, path: path)
   end
 
   describe "BasicTemplate.render/1" do
     test "should render the template and contain the proper text when passed assigns" do
-      Application.put_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Node)
+      Application.put_env(:mjml_eex, :compiler, MjmlEEx.Compilers.Node)
 
       assert BasicTemplate.render(call_to_action_text: "Click me please!") =~ "Click me please!"
     after
-      Application.put_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Rust)
+      set_default_config()
     end
 
     test "should raise an error if the timeout is set too low for rendering" do
-      Application.put_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Node)
-      Application.put_env(MjmlEEx.Compilers.Node, :timeout, 5)
+      Application.put_env(:mjml_eex, :compiler, MjmlEEx.Compilers.Node)
+      Application.put_env(:mjml_eex, :compiler_opts, timeout: 5)
 
       assert_raise RuntimeError,
                    ~r/Node mjml CLI compiler timed out after 0 second\(s\)/,
@@ -34,13 +36,12 @@ defmodule NodeCompilerTest do
                      BasicTemplate.render(call_to_action_text: "Click me please!")
                    end
     after
-      Application.put_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Rust)
-      Application.delete_env(MjmlEEx.Compilers.Node, :timeout)
+      set_default_config()
     end
 
     test "should raise an error if the mjml node cli tool is unavailable" do
-      Application.put_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Node)
-      Application.put_env(MjmlEEx.Compilers.Node, :compiler_path, "totally_not_a_real_cli_compiler")
+      Application.put_env(:mjml_eex, :compiler, MjmlEEx.Compilers.Node)
+      Application.put_env(:mjml_eex, :compiler_opts, path: "totally_not_a_real_cli_compiler")
 
       assert_raise RuntimeError,
                    ~r/Node mjml CLI compiler exited with status code 32512/,
@@ -48,8 +49,11 @@ defmodule NodeCompilerTest do
                      BasicTemplate.render(call_to_action_text: "Click me please!")
                    end
     after
-      Application.put_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Rust)
-      Application.delete_env(MjmlEEx.Compilers.Node, :compiler_path)
+      set_default_config()
     end
+  end
+
+  defp set_default_config do
+    Application.put_env(:mjml_eex, :compiler, MjmlEEx.Compilers.Rust)
   end
 end

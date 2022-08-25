@@ -99,7 +99,7 @@ defmodule MjmlEEx do
   is used.
   """
   def configured_compiler do
-    Application.get_env(MjmlEEx, :compiler, MjmlEEx.Compilers.Rust)
+    Application.get_env(:mjml_eex, :compiler, MjmlEEx.Compilers.Rust)
   end
 
   defp generate_functions(:runtime, raw_mjml_template, mjml_template_file, layout_module) do
@@ -121,17 +121,32 @@ defmodule MjmlEEx do
       def render(assigns) do
         compiler = MjmlEEx.configured_compiler()
 
-        assigns
-        |> apply_assigns_to_template()
-        |> Phoenix.HTML.safe_to_string()
-        |> compiler.compile()
-        |> case do
-          {:ok, email_html} ->
-            email_html
+        telemetry_metadata = %{
+          compiler: compiler,
+          mode: :runtime,
+          assigns: assigns,
+          mjml_template: unquote(raw_mjml_template),
+          mjml_template_file: unquote(mjml_template_file),
+          layout_module: unquote(layout_module)
+        }
 
-          {:error, error} ->
-            raise "Failed to compile MJML template: #{inspect(error)}"
-        end
+        :telemetry.span(
+          [:mjml_eex, :render],
+          telemetry_metadata,
+          fn ->
+            assigns
+            |> apply_assigns_to_template()
+            |> Phoenix.HTML.safe_to_string()
+            |> compiler.compile()
+            |> case do
+              {:ok, email_html} ->
+                {email_html, Map.put(telemetry_metadata, :rendered_html, email_html)}
+
+              {:error, error} ->
+                raise "Failed to compile MJML template: #{inspect(error)}"
+            end
+          end
+        )
       end
 
       defp apply_assigns_to_template(var!(assigns)) do
@@ -172,9 +187,27 @@ defmodule MjmlEEx do
 
       @doc "Safely render the MJML template using Phoenix.HTML"
       def render(assigns) do
-        assigns
-        |> apply_assigns_to_template()
-        |> Phoenix.HTML.safe_to_string()
+        telemetry_metadata = %{
+          compiler: unquote(compiler),
+          mode: :compile,
+          assigns: assigns,
+          mjml_template: unquote(raw_mjml_template),
+          mjml_template_file: unquote(mjml_template_file),
+          layout_module: unquote(layout_module)
+        }
+
+        :telemetry.span(
+          [:mjml_eex, :render],
+          telemetry_metadata,
+          fn ->
+            email_html =
+              assigns
+              |> apply_assigns_to_template()
+              |> Phoenix.HTML.safe_to_string()
+
+            {email_html, Map.put(telemetry_metadata, :rendered_html, email_html)}
+          end
+        )
       end
 
       defp apply_assigns_to_template(var!(assigns)) do

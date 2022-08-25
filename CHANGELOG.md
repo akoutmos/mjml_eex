@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- MJML EEx now has Telemetry support for the rendering process. Take a look at the
+  `MjmlEEx.Telemetry` module for more details.
+
+### Changed
+
+- The configuration options that are passed to MJML EEx have change in structure
+  and there is now a `:compiler_opts` entry for options that are passed to the
+  configured compiler.
+
 ## [0.8.1] - 2022-07-22
 
 ### Fixed

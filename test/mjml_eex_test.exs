@@ -1,6 +1,10 @@
 defmodule MjmlEExTest do
   use ExUnit.Case
 
+  import ExUnit.CaptureLog
+
+  alias MjmlEEx.Telemetry
+
   defmodule BasicTemplate do
     use MjmlEEx,
       mjml_template: "test_templates/basic_template.mjml.eex",
@@ -177,6 +181,10 @@ defmodule MjmlEExTest do
     end
 
     test "should emit a telemetry event when the rendering starts and completes" do
+      # Attach the provided debug logger
+      Telemetry.attach_logger(level: :info)
+
+      # Attach custom handler
       :telemetry.attach_many(
         "mjml_eex_test_telemetry",
         [
@@ -189,7 +197,9 @@ defmodule MjmlEExTest do
         nil
       )
 
-      DynamicComponentTemplate.render(some_data: 1..5)
+      assert capture_log(fn ->
+               DynamicComponentTemplate.render(some_data: 1..5)
+             end) =~ "Measurements:"
 
       # Check the start event
       assert_received %{event: [:mjml_eex, :render, :start], measurements: measurements, metadata: metadata}
@@ -210,6 +220,7 @@ defmodule MjmlEExTest do
         end
       )
     after
+      Telemetry.detach_logger()
       :telemetry.detach("mjml_eex_test_telemetry")
     end
   end

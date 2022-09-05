@@ -4,7 +4,7 @@ defmodule MjmlEEx.MixProject do
   def project do
     [
       app: :mjml_eex,
-      version: "0.8.1",
+      version: "0.9.0",
       elixir: ">= 1.11.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "MJML EEx",

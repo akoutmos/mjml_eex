@@ -43,7 +43,7 @@ dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:mjml_eex, "~> 0.8.1"}
+    {:mjml_eex, "~> 0.9.0"}
   ]
 end
 ```

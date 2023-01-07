@@ -13,7 +13,7 @@
 
   <a href="https://github.com/akoutmos/mjml_eex/actions">
     <img alt="GitHub Workflow Status (master)"
-    src="https://img.shields.io/github/workflow/status/akoutmos/mjml_eex/MJML%20EEx%20CI/master?label=Build%20Status&style=for-the-badge">
+    src="https://img.shields.io/github/actions/workflow/status/akoutmos/mjml_eex/main.yml?label=Build%20Status&style=for-the-badge&branch=master">
   </a>
 
   <a href="https://coveralls.io/github/akoutmos/mjml_eex?branch=master">

@@ -113,7 +113,7 @@ else
     @behaviour MjmlEEx.Compiler
 
     @impl true
-    def compile(mjml_template) do
+    def compile(_mjml_template) do
       raise("""
       In order to use the Node compiler you must also update your mix.exs file like so:
 

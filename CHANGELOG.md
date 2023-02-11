@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2022-02-10
+
+### Changed
+
+- Relax `phoenix_html` to make it compatible with phoenix 1.7.
+- Upgrades the dependencies to the latest version.
+
 ## [0.9.0] - 2022-09-05
 
 ### Added

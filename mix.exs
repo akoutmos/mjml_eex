@@ -5,7 +5,7 @@ defmodule MjmlEEx.MixProject do
     [
       app: :mjml_eex,
       version: "0.9.1",
-      elixir: ">= 1.11.0",
+      elixir: ">= 1.13.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "MJML EEx",
       source_url: "https://github.com/akoutmos/mjml_eex",
@@ -64,8 +64,8 @@ defmodule MjmlEEx.MixProject do
   defp deps do
     [
       # Production deps
-      {:mjml, "~> 1.5.0"},
-      {:phoenix_html, "~> 3.2"},
+      {:mjml, "~> 1.0 or ~> 2.0 or ~> 3.0"},
+      {:phoenix_html, "~> 3.2 or ~> 4.0"},
       {:telemetry, "~> 1.0"},
       {:erlexec, "~> 2.0", optional: true},
 

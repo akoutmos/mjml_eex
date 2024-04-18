@@ -145,6 +145,8 @@ In order to render the email you would then call: `FunctionTemplate.render(first
 
 ### Using Components
 
+**Static components**
+
 In addition to compiling single MJML EEx templates, you can also create MJML partials and include them
 in other MJML templates AND components using the special `render_static_component` function. With the following
 modules:
@@ -201,13 +203,48 @@ cannot use any assigns that would bee to be evaluated at runtime. For example, t
 </mj-text>
 ```
 
+**Dynamic components**
+
 If you need to render your components dynamically, use `render_dynamic_component` instead and be sure to configure your
-template module like so to generate the email HTML at runtime:
+template module like below to generate the email HTML at runtime. First, you create your component, for example, `MyTemplate.CtaComponent.ex`:
 
 ```elixir
-def MyTemplate do
-  use MjmlEEx, mode: :runtime
+def MyTemplate.CtaComponent do
+  use MjmlEEx.Component, mode: :runtime
+
+  @impl MjmlEEx.Component
+  def render(assigns) do
+    """
+    <mj-column>
+      <mj-text font-size="20px" color="#F45E43">#{assigns[:call_to_action_text]}</mj-text>
+      <mj-button align="center" inner-padding="12px 20px">#{assigns[:call_to_action_link]}</mj-button>
+    </mj-column>
+    """
+  end
 end
+```
+
+then, in your MJML template, insert it using the `render_dynamic_template_component` function:
+
+```html
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-divider border-color="#F45E43"></mj-divider>
+        <%= render_dynamic_component MyTemplate.CtaComponent
+        %{call_to_action_text: "Call to action text", call_to_action_link:
+        "#{@cta_link}"} %>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+```
+
+In your `UserNotifier` module, or equivalent, you render your template, passing any assigns/data it expects:
+
+```Elixir
+WelcomeEmail.render(call_to_action_text: call_to_action_text, call_to_action_link: call_to_action_link)
 ```
 
 ### Using Layouts

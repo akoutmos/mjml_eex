@@ -51,9 +51,12 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        otp: ["26.2", "27.0"]
-        elixir: ["1.15.8", "1.16.3", "1.17.0-rc.1"]
+      - matrix.otp: 26.2
+        matrix.elixir: 1.15.8
+      - matrix.otp: 26.2
+        matrix.elixir: 1.16.3
+      - matrix.otp: 27.0
+        matrix.elixir: 1.17.0-rc.1
 
     steps:
       - name: Checkout code

@@ -97,9 +97,9 @@ module path):
     <mj-section>
       <mj-column>
         <mj-divider border-color="#F45E43"></mj-divider>
-        <mj-text font-size="20px" color="#F45E43"
-          >Hello <%= @first_name %> <%= @last_name %>!</mj-text
-        >
+        <mj-text font-size="20px" color="#F45E43">
+          Hello <%= @first_name %> <%= @last_name %>!
+        </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
@@ -132,9 +132,9 @@ In conjunction with the following template:
     <mj-section>
       <mj-column>
         <mj-divider border-color="#F45E43"></mj-divider>
-        <mj-text font-size="20px" color="#F45E43"
-          >Hello <%= generate_full_name(@first_name, @last_name) %>!</mj-text
-        >
+        <mj-text font-size="20px" color="#F45E43">
+          Hello <%= generate_full_name(@first_name, @last_name) %>!
+        </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
@@ -183,9 +183,9 @@ And the following template:
     <mj-section>
       <mj-column>
         <mj-divider border-color="#F45E43"></mj-divider>
-        <mj-text font-size="20px" color="#F45E43"
-          >Hello <%= generate_full_name(@first_name, @last_name) %>!</mj-text
-        >
+        <mj-text font-size="20px" color="#F45E43">
+          Hello <%= generate_full_name(@first_name, @last_name) %>!
+        </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>

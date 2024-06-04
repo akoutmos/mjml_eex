@@ -1,3 +1,5 @@
 {
-  "skip_files": ["test", "lib/mjml_eex/tokenizer.ex"]
+  "skip_files": [
+    "test"
+  ]
 }

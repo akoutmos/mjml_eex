@@ -6,9 +6,9 @@ env:
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   static_analysis:
@@ -17,12 +17,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.13.3'
-          otp-version: '24.2'
+          elixir-version: "1.16.3"
+          otp-version: "26.2"
       - name: Restore dependencies cache
         uses: actions/cache@v2
         with:
@@ -52,23 +52,26 @@ jobs:
 
     strategy:
       matrix:
-        elixir:
-          - '1.13.3'
-        otp:
-          - '24.2'
+        version:
+          - otp: 26.2
+            elixir: 1.15.8
+          - otp: 26.2
+            elixir: 1.16.3
+          - otp: 27.0
+            elixir: 1.17.0-rc.1
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.elixir }}
-          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.version.elixir }}
+          otp-version: ${{ matrix.version.otp }}
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
-          node-version: 15
+          node-version: 18
       - name: Restore dependencies cache
         uses: actions/cache@v2
         with:

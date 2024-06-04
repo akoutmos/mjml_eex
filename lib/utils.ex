@@ -43,7 +43,7 @@ defmodule MjmlEEx.Utils do
   """
   def escape_eex_expressions(template) do
     template
-    |> MjmlEEx.Tokenizer.tokenize([])
+    |> EEx.Compiler.tokenize([])
     |> case do
       {:ok, tokens} ->
         reduce_tokens(tokens)

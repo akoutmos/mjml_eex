@@ -4,8 +4,8 @@ defmodule MjmlEEx.MixProject do
   def project do
     [
       app: :mjml_eex,
-      version: "0.10.0",
-      elixir: ">= 1.13.0",
+      version: project_version(),
+      elixir: ">= 1.15.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "MJML EEx",
       source_url: "https://github.com/akoutmos/mjml_eex",
@@ -70,11 +70,11 @@ defmodule MjmlEEx.MixProject do
       {:erlexec, "~> 2.0", optional: true},
 
       # Development deps
-      {:ex_doc, "~> 0.31", only: :dev},
+      {:ex_doc, "~> 0.34", only: :dev},
       {:excoveralls, "~> 0.18", only: [:test, :dev], runtime: false},
-      {:doctor, "~> 0.21.0", only: :dev},
+      {:doctor, "~> 0.21", only: :dev},
       {:credo, "~> 1.7", only: :dev},
-      {:git_hooks, "~> 0.7.3", only: [:test, :dev], runtime: false}
+      {:git_hooks, "~> 0.7", only: [:test, :dev], runtime: false}
     ]
   end
 
@@ -82,6 +82,12 @@ defmodule MjmlEEx.MixProject do
     [
       docs: ["docs", &copy_files/1]
     ]
+  end
+
+  defp project_version do
+    "VERSION"
+    |> File.read!()
+    |> String.trim()
   end
 
   defp copy_files(_) do

@@ -41,7 +41,7 @@ defmodule MjmlEEx.MixProject do
   defp package do
     [
       name: "mjml_eex",
-      files: ~w(lib mix.exs README.md LICENSE CHANGELOG.md),
+      files: ~w(lib mix.exs README.md LICENSE CHANGELOG.md VERSION),
       licenses: ["MIT"],
       maintainers: ["Alex Koutmos"],
       links: %{

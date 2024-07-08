@@ -70,6 +70,7 @@ defmodule MjmlEEx.MixProject do
       {:erlexec, "~> 2.0", optional: true},
 
       # Development deps
+      {:gettext, "~> 0.24.0", only: :test},
       {:ex_doc, "~> 0.34", only: :dev},
       {:excoveralls, "~> 0.18", only: [:test, :dev], runtime: false},
       {:doctor, "~> 0.21", only: :dev},

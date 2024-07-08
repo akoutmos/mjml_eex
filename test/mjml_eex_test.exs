@@ -75,6 +75,18 @@ defmodule MjmlEExTest do
       layout: AssignsLayout
   end
 
+  defmodule MjmlEExTest.Gettext do
+    use Gettext, otp_app: :mjml_eex
+  end
+
+  defmodule GettextTemplate do
+    import MjmlEExTest.Gettext
+
+    use MjmlEEx,
+      mjml_template: "test_templates/gettext_template.mjml.eex",
+      mode: :compile
+  end
+
   describe "BasicTemplate.render/1" do
     test "should raise an error if no assigns are provided" do
       assert_raise ArgumentError, ~r/assign @call_to_action_text not available in template/, fn ->
@@ -96,6 +108,12 @@ defmodule MjmlEExTest do
     test "should output the correct button depending on the assigns" do
       assert ConditionalTemplate.render(all_caps: true) =~ "SIGN UP TODAY!!"
       assert ConditionalTemplate.render(all_caps: false) =~ "Sign up today!"
+    end
+  end
+
+  describe "GettextTemplate.render/1" do
+    test "should output the correct output when run with gettext" do
+      assert GettextTemplate.render([]) =~ "Hello John!"
     end
   end
 

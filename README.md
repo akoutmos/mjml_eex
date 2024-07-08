@@ -306,6 +306,25 @@ And your template file can contain merely the parts that you need for that parti
 <mj-body> ... </mj-body>
 ```
 
+## Using with Gettext
+
+Similarly to Phoenix live/dead views, you can leverage Gettext to produce translated emails. To use Gettext, you will
+need to have a Gettext module defined in your project (this should be created automatically for you when you create your
+Phoenix project via `mix phx.new MyApp`). Then your MjmlEEx module will look something like this:
+
+```elixir
+defmodule MyApp.GettextTemplate do
+    import MyApp.Gettext
+
+    use MjmlEEx,
+      mjml_template: "gettext_template.mjml.eex",
+      mode: :compile
+  end
+```
+
+Make sure that you have the `import MyApp.Gettext` statement before the `use MjmlEEx` statement as you will get a
+compiler error that the `gettext` function that is being called in the `gettext_template.mjml.eex` has not been defined.
+
 ## Configuration
 
 MJML EEx has support for both the 1st party [NodeJS compiler](https://github.com/mjmlio/mjml) and the 3rd party

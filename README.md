@@ -43,7 +43,7 @@ dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:mjml_eex, "~> 0.10.0"}
+    {:mjml_eex, "~> 0.12.0"}
   ]
 end
 ```
@@ -97,9 +97,7 @@ module path):
     <mj-section>
       <mj-column>
         <mj-divider border-color="#F45E43"></mj-divider>
-        <mj-text font-size="20px" color="#F45E43">
-          Hello <%= @first_name %> <%= @last_name %>!
-        </mj-text>
+        <mj-text font-size="20px" color="#F45E43"> Hello <%= @first_name %> <%= @last_name %>! </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
@@ -132,9 +130,7 @@ In conjunction with the following template:
     <mj-section>
       <mj-column>
         <mj-divider border-color="#F45E43"></mj-divider>
-        <mj-text font-size="20px" color="#F45E43">
-          Hello <%= generate_full_name(@first_name, @last_name) %>!
-        </mj-text>
+        <mj-text font-size="20px" color="#F45E43"> Hello <%= generate_full_name(@first_name, @last_name) %>! </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
@@ -183,9 +179,7 @@ And the following template:
     <mj-section>
       <mj-column>
         <mj-divider border-color="#F45E43"></mj-divider>
-        <mj-text font-size="20px" color="#F45E43">
-          Hello <%= generate_full_name(@first_name, @last_name) %>!
-        </mj-text>
+        <mj-text font-size="20px" color="#F45E43"> Hello <%= generate_full_name(@first_name, @last_name) %>! </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
@@ -232,9 +226,8 @@ then, in your MJML template, insert it using the `render_dynamic_template_compon
     <mj-section>
       <mj-column>
         <mj-divider border-color="#F45E43"></mj-divider>
-        <%= render_dynamic_component MyTemplate.CtaComponent
-        %{call_to_action_text: "Call to action text", call_to_action_link:
-        "#{@cta_link}"} %>
+        <%= render_dynamic_component MyTemplate.CtaComponent %{call_to_action_text: "Call to action text",
+        call_to_action_link: "#{@cta_link}"} %>
       </mj-column>
     </mj-section>
   </mj-body>
@@ -267,18 +260,10 @@ And an accompanying layout like so:
 <mjml>
   <mj-head>
     <mj-title>Say hello to card</mj-title>
-    <mj-font
-      name="Roboto"
-      href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500"
-    ></mj-font>
+    <mj-font name="Roboto" href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500"></mj-font>
     <mj-attributes>
       <mj-all font-family="Montserrat, Helvetica, Arial, sans-serif"></mj-all>
-      <mj-text
-        font-weight="400"
-        font-size="16px"
-        color="#000000"
-        line-height="24px"
-      ></mj-text>
+      <mj-text font-weight="400" font-size="16px" color="#000000" line-height="24px"></mj-text>
       <mj-section padding="<%= @padding %>"></mj-section>
     </mj-attributes>
   </mj-head>

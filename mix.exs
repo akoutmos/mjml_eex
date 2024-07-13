@@ -64,10 +64,10 @@ defmodule MjmlEEx.MixProject do
   defp deps do
     [
       # Production deps
-      {:mjml, "~> 1.0 or ~> 2.0 or ~> 3.0"},
+      {:mjml, "~> 4.0"},
       {:phoenix_html, "~> 3.2 or ~> 4.0"},
       {:telemetry, "~> 1.0"},
-      {:erlexec, "~> 2.0", optional: true},
+      {:erlexec, "~> 2.0.7", optional: true},
 
       # Development deps
       {:gettext, "~> 0.24.0", only: :test},

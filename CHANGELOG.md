@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2024-07-12
+
+- Upgraded to MJML 4.0.0
+
+## [0.11.0] - 2024-06-20
+
+### Changed
+
+- Upgraded dependencies
+- Removed forked Elixir Tokenizier
+
 ## [0.10.0] - 2024-02-19
 
 ### Changed

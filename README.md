@@ -189,7 +189,7 @@ And the following template:
 Be sure to look at the `MjmlEEx.Component` module for additional usage information as you can also pass options to your
 template and use them when generating the partial string. One thing to note is that when using
 `render_static_component`, the data that is passed to the component must be defined at compile time. This means that you
-cannot use any assigns that would bee to be evaluated at runtime. For example, this would raise an error:
+cannot use any assigns that would be evaluated at runtime. For example, this would raise an error:
 
 ```elixir
 <mj-text>

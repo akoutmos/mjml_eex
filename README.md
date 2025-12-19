@@ -306,12 +306,12 @@ Phoenix project via `mix phx.new MyApp`). Then your MjmlEEx module will look som
 
 ```elixir
 defmodule MyApp.GettextTemplate do
-    import MyApp.Gettext
+  import MyApp.Gettext
 
-    use MjmlEEx,
-      mjml_template: "gettext_template.mjml.eex",
-      mode: :compile
-  end
+  use MjmlEEx,
+    mjml_template: "gettext_template.mjml.eex",
+    mode: :compile
+end
 ```
 
 Make sure that you have the `import MyApp.Gettext` statement before the `use MjmlEEx` statement as you will get a

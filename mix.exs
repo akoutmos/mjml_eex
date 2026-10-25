@@ -69,7 +69,7 @@ defmodule MjmlEEx.MixProject do
   defp deps do
     [
       # Production deps
-      {:mjml, "~> 4.0 or ~> 5.0"},
+      {:mjml, "~>5.0 or ~> 6.0"},
       {:phoenix_html, "~> 3.2 or ~> 4.0"},
       {:telemetry, "~> 1.0"},
       {:erlexec, "~> 2.2", optional: true},

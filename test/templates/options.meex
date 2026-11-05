@@ -1,0 +1,13 @@
+<mjml>
+  <mj-body>
+    <!-- MJML_EEX_TEST_COMMENT -->
+    <mj-section>
+      <mj-column>
+        <mj-text font-family="Custom Font">Hello {@name}!</mj-text>
+        <mj-social>
+          <mj-social-element name="github" href="https://github.com/akoutmos/mjml_eex">GitHub</mj-social-element>
+        </mj-social>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

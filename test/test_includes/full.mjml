@@ -1,0 +1,8 @@
+<mjml>
+  <mj-head>
+    <mj-attributes><mj-class name="brand" color="#ff0000" /></mj-attributes>
+  </mj-head>
+  <mj-body>
+    <mj-section><mj-column><mj-text mj-class="brand">Full document</mj-text></mj-column></mj-section>
+  </mj-body>
+</mjml>

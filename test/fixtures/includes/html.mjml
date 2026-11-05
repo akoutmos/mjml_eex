@@ -1,0 +1,5 @@
+<mjml>
+  <mj-body>
+    <mj-include path="../../test_includes/part.html" type="html" />
+  </mj-body>
+</mjml>

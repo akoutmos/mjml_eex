@@ -1,0 +1,9 @@
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-include path="../../test_includes/nested/nested.mjml" />
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -1,0 +1,58 @@
+<mjml lang="en" dir="ltr">
+  <mj-head>
+    <mj-title>Welcome</mj-title>
+    <mj-preview>Hello there</mj-preview>
+    <mj-font name="Raleway" href="https://example.com/raleway.css" />
+    <mj-attributes>
+      <mj-all font-family="Raleway, Arial" />
+      <mj-class name="blue" color="#0000ff">
+        <mj-text font-size="16px" />
+      </mj-class>
+      <mj-text line-height="1.5" />
+    </mj-attributes>
+    <mj-style>.x { color: red; } @media (max-width: 480px) { .x { color: blue; } }</mj-style>
+    <mj-breakpoint width="480px" />
+  </mj-head>
+  <mj-body background-color="#f2f2f2">
+    <!-- A comment -->
+    <mj-raw><!--[if mso]><table><tr><td><![endif]--></mj-raw>
+    <mj-wrapper padding="10px 0">
+      <mj-section>
+        <mj-group>
+          <mj-column width="50%">
+            <mj-text mj-class="blue" css-class="x">Hello <b>there</b>,<br>how are { you }?</mj-text>
+            <mj-button href="https://example.com" align="left">Go</mj-button>
+          </mj-column>
+          <mj-column width="50%">
+            <mj-image src="https://example.com/a.png" fluid-on-mobile="true" alt="" />
+            <mj-divider border-color="rgb(1, 2, 3)" />
+            <mj-spacer height="20px" />
+          </mj-column>
+        </mj-group>
+      </mj-section>
+    </mj-wrapper>
+    <mj-raw><!--[if mso]></td></tr></table><![endif]--></mj-raw>
+    <mj-raw mjml-raw-text><div class="unbalanced"></mj-raw>
+    <mj-raw mjml-raw-text></div></mj-raw>
+    <mj-section>
+      <mj-column>
+        <mj-social mode="horizontal">
+          <mj-social-element name="github" href="https://github.com">GitHub</mj-social-element>
+        </mj-social>
+        <mj-navbar>
+          <mj-navbar-link href="/a">A</mj-navbar-link>
+        </mj-navbar>
+        <mj-accordion>
+          <mj-accordion-element>
+            <mj-accordion-title>Q</mj-accordion-title>
+            <mj-accordion-text>A</mj-accordion-text>
+          </mj-accordion-element>
+        </mj-accordion>
+        <mj-carousel>
+          <mj-carousel-image src="https://example.com/a.png" />
+        </mj-carousel>
+        <mj-table cellpadding="4"><tr><td>Cell</td></tr></mj-table>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

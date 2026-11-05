@@ -1,0 +1,5 @@
+<mj-section>
+  <mj-column>
+    <mj-text colour="red">Bad</mj-text>
+  </mj-column>
+</mj-section>

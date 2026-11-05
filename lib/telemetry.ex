@@ -10,13 +10,17 @@ defmodule MjmlEEx.Telemetry do
   * `[:mjml_eex, :render, :stop]` - When the rendering process has successfully completed
   * `[:mjml_eex, :render, :exception]` - When the rendering process resulted in an error
 
+  The events are emitted by a template module's `to_html/1`. `:mjml_template` is the rendered MJML; it's `nil` in
+  the `:start` event, since rendering happens inside the span. `:module` is the template module, and
+  `:mjml_template_file` is its template file.
+
   The render events contain the following measurements and metadata:
 
   | event        | measures       | metadata                                                                                                                       |
   | ------------ | ---------------| ------------------------------------------------------------------------------------------------------------------------------ |
-  | `:start`     | `:system_time` | `:compiler`, `:mode`, `:assigns`, `:mjml_template`, `:mjml_template_file`, `:layout_module`                                    |
-  | `:stop`      | `:duration`    | `:compiler`, `:mode`, `:assigns`, `:mjml_template`, `:mjml_template_file`, `:layout_module`                                    |
-  | `:exception` | `:duration`    | `:compiler`, `:mode`, `:assigns`, `:mjml_template`, `:mjml_template_file`, `:layout_module`, `:kind`, `:reason`, `:stacktrace` |
+  | `:start`     | `:system_time` | `:compiler`, `:assigns`, `:mjml_template`, `:mjml_template_file`, `:layout_module`, `:module`                         |
+  | `:stop`      | `:duration`    | `:compiler`, `:assigns`, `:mjml_template`, `:mjml_template_file`, `:layout_module`, `:module`, `:rendered_html`       |
+  | `:exception` | `:duration`    | `:compiler`, `:assigns`, `:mjml_template`, `:mjml_template_file`, `:layout_module`, `:module`, `:kind`, `:reason`, `:stacktrace` |
   """
 
   require Logger
@@ -29,6 +33,7 @@ defmodule MjmlEEx.Telemetry do
   resulting HTML looks like. This is primarily used for debugging purposes
   but can be modified for use in production if you need to.
   """
+  @spec attach_logger(keyword()) :: :ok | {:error, :already_exists}
   def attach_logger(opts \\ []) do
     events = [
       [:mjml_eex, :render, :start],
@@ -44,6 +49,7 @@ defmodule MjmlEEx.Telemetry do
   @doc """
   Detach the debugging logger so that log messages are no longer produced.
   """
+  @spec detach_logger() :: :ok | {:error, :not_found}
   def detach_logger do
     :telemetry.detach(@logger_event_id)
   end

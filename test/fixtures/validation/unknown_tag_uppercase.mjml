@@ -1,0 +1,10 @@
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <Table><tr><td>Hi</td></tr></Table>
+        <MJ-TEXT colour="red">Hi</MJ-TEXT>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

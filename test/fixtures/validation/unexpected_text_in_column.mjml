@@ -1,0 +1,10 @@
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        Hello
+        <mj-text>Hi</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

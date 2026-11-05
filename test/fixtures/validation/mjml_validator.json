@@ -1,0 +1,246 @@
+{
+  "generated_by": "spec_gen/validate.js (mix mjml_eex.gen.spec)",
+  "mjml_version": "5.4.1",
+  "fixtures": {
+    "duplicate_attribute.mjml": [],
+    "empty_title.mjml": [],
+    "ending_tag_button_in_text.mjml": [],
+    "ending_tag_section_in_raw.mjml": [],
+    "invalid_child_accordion_title_in_accordion.mjml": [
+      {
+        "line": 6,
+        "tag": "mj-accordion-title",
+        "message": "mj-accordion-title cannot be used inside mj-accordion, only inside: mj-accordion-element, mj-attributes"
+      }
+    ],
+    "invalid_child_body_component_in_head.mjml": [
+      {
+        "line": 3,
+        "tag": "mj-section",
+        "message": "mj-section cannot be used inside mj-head, only inside: mj-attributes, mj-body, mj-wrapper"
+      }
+    ],
+    "invalid_child_carousel_image_in_column.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-carousel-image",
+        "message": "mj-carousel-image cannot be used inside mj-column, only inside: mj-attributes, mj-carousel"
+      }
+    ],
+    "invalid_child_column_in_body.mjml": [
+      {
+        "line": 3,
+        "tag": "mj-column",
+        "message": "mj-column cannot be used inside mj-body, only inside: mj-attributes, mj-group, mj-section"
+      }
+    ],
+    "invalid_child_head_component_in_body.mjml": [
+      {
+        "line": 3,
+        "tag": "mj-title",
+        "message": "mj-title cannot be used inside mj-body, only inside: mj-attributes, mj-head"
+      }
+    ],
+    "invalid_child_in_mj_font.mjml": [
+      {
+        "line": 4,
+        "tag": "mj-text",
+        "message": "mj-text cannot be used inside mj-font, only inside: mj-attributes, mj-column, mj-hero"
+      }
+    ],
+    "invalid_child_mj_all_outside_attributes.mjml": [],
+    "invalid_child_section_in_column.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-section",
+        "message": "mj-section cannot be used inside mj-column, only inside: mj-attributes, mj-body, mj-wrapper"
+      }
+    ],
+    "invalid_child_text_in_section.mjml": [
+      {
+        "line": 4,
+        "tag": "mj-text",
+        "message": "mj-text cannot be used inside mj-section, only inside: mj-attributes, mj-column, mj-hero"
+      }
+    ],
+    "invalid_child_wrapper_in_wrapper.mjml": [
+      {
+        "line": 4,
+        "tag": "mj-wrapper",
+        "message": "mj-wrapper cannot be used inside mj-wrapper, only inside: mj-attributes, mj-body"
+      }
+    ],
+    "invalid_value_boolean.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-image",
+        "message": "Attribute fluid-on-mobile has invalid value: yes for type Boolean "
+      }
+    ],
+    "invalid_value_color.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-text",
+        "message": "Attribute color has invalid value: redd for type Color "
+      }
+    ],
+    "invalid_value_enum.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-text",
+        "message": "Attribute align has invalid value: middle for type Enum, only accepts left, right, center, justify"
+      }
+    ],
+    "invalid_value_in_attributes_child.mjml": [
+      {
+        "line": 4,
+        "tag": "mj-text",
+        "message": "Attribute align has invalid value: middle for type Enum, only accepts left, right, center, justify"
+      }
+    ],
+    "invalid_value_integer.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-table",
+        "message": "Attribute cellpadding has invalid value: none for type NInteger "
+      }
+    ],
+    "invalid_value_mj_include_type.mjml": [],
+    "invalid_value_root_owa.mjml": [],
+    "invalid_value_unit.mjml": [
+      {
+        "line": 3,
+        "tag": "mj-section",
+        "message": "Attribute padding has invalid value: 10 for type Unit, only accepts (px, %) units and 1 to 4 value(s)"
+      }
+    ],
+    "invalid_value_unit_too_many.mjml": [
+      {
+        "line": 3,
+        "tag": "mj-section",
+        "message": "Attribute padding has invalid value: 1px 2px 3px 4px 5px for type Unit, only accepts (px, %) units and 1 to 4 value(s)"
+      }
+    ],
+    "missing_attribute_mj_class_name.mjml": [],
+    "missing_attribute_mj_include_path.mjml": [],
+    "root_invalid_child.mjml": [],
+    "root_missing.mjml": [],
+    "root_nested_mjml.mjml": [],
+    "root_text_outside.mjml": [],
+    "root_two_bodies.mjml": [],
+    "root_two_roots.mjml": [],
+    "syntax_stray_close_tag.mjml": [],
+    "syntax_unclosed_quote.mjml": [],
+    "syntax_unclosed_tag.mjml": [],
+    "unexpected_text_in_column.mjml": [],
+    "unknown_attribute_in_attributes_child.mjml": [
+      {
+        "line": 4,
+        "tag": "mj-text",
+        "message": "Attribute colour is illegal"
+      }
+    ],
+    "unknown_attribute_in_head.mjml": [
+      {
+        "line": 3,
+        "tag": "mj-font",
+        "message": "Attribute weight is illegal"
+      }
+    ],
+    "unknown_attribute_multiple.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-image",
+        "message": "Attributes foo, bar are illegal"
+      }
+    ],
+    "unknown_attribute_on_mj_class.mjml": [],
+    "unknown_attribute_on_root.mjml": [],
+    "unknown_attribute_raw_text_outside_mj_raw.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-text",
+        "message": "Attribute mjml-raw-text is illegal"
+      }
+    ],
+    "unknown_attribute_typo.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-text",
+        "message": "Attribute colour is illegal"
+      }
+    ],
+    "unknown_class.mjml": [],
+    "unknown_tag_html_in_column.mjml": [
+      {
+        "line": 5,
+        "tag": "p",
+        "message": "Element p doesn't exist or is not registered"
+      }
+    ],
+    "unknown_tag_html_with_mjml_child.mjml": [
+      {
+        "line": 3,
+        "tag": "div",
+        "message": "Element div doesn't exist or is not registered"
+      }
+    ],
+    "unknown_tag_in_attributes.mjml": [
+      {
+        "line": 4,
+        "tag": "mj-foo",
+        "message": "Element mj-foo doesn't exist or is not registered"
+      }
+    ],
+    "unknown_tag_in_head.mjml": [
+      {
+        "line": 3,
+        "tag": "mj-titel",
+        "message": "Element mj-titel doesn't exist or is not registered"
+      }
+    ],
+    "unknown_tag_typo.mjml": [
+      {
+        "line": 5,
+        "tag": "mj-txt",
+        "message": "Element mj-txt doesn't exist or is not registered"
+      }
+    ],
+    "unknown_tag_uppercase.mjml": [
+      {
+        "line": 5,
+        "tag": "table",
+        "message": "Element table doesn't exist or is not registered"
+      },
+      {
+        "line": 5,
+        "tag": "tr",
+        "message": "Element tr doesn't exist or is not registered"
+      },
+      {
+        "line": 5,
+        "tag": "td",
+        "message": "Element td doesn't exist or is not registered"
+      },
+      {
+        "line": 6,
+        "tag": "mj-text",
+        "message": "Attribute colour is illegal"
+      }
+    ],
+    "unsupported_tag_html_attributes.mjml": [],
+    "unsupported_value_inline_style.mjml": [],
+    "valid_kitchen_sink.mjml": [
+      {
+        "line": 35,
+        "tag": "mj-raw",
+        "message": "Attribute mjml-raw-text is illegal"
+      },
+      {
+        "line": 36,
+        "tag": "mj-raw",
+        "message": "Attribute mjml-raw-text is illegal"
+      }
+    ]
+  }
+}

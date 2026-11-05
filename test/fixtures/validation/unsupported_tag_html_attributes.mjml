@@ -1,0 +1,16 @@
+<mjml>
+  <mj-head>
+    <mj-html-attributes>
+      <mj-selector path=".x td">
+        <mj-html-attribute name="data-id">42</mj-html-attribute>
+      </mj-selector>
+    </mj-html-attributes>
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text css-class="x">Hi</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -1,0 +1,324 @@
+{
+  "generated_by": "spec_gen/includes.js (mix mjml_eex.gen.spec)",
+  "fixtures": {
+    "body_fragment.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-section",
+              "attributes": {},
+              "children": [
+                {
+                  "tag": "mj-column",
+                  "attributes": {},
+                  "children": [
+                    {
+                      "tag": "mj-text",
+                      "attributes": {},
+                      "content": "Included partial",
+                      "children": []
+                    },
+                    {
+                      "tag": "mj-text",
+                      "attributes": {},
+                      "content": "Nested partial",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "css_in_body.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-head",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-title",
+              "attributes": {},
+              "content": "Title",
+              "children": []
+            },
+            {
+              "tag": "mj-style",
+              "attributes": {},
+              "content": ".brand-text { color: blue; }",
+              "children": []
+            },
+            {
+              "tag": "mj-style",
+              "attributes": {
+                "inline": "inline"
+              },
+              "content": ".brand-text { color: blue; }",
+              "children": []
+            }
+          ]
+        },
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": []
+        }
+      ]
+    },
+    "css_without_head.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": []
+        },
+        {
+          "tag": "mj-head",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-style",
+              "attributes": {},
+              "content": ".brand-text { color: blue; }",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "head_fragment.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-head",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-title",
+              "attributes": {},
+              "content": "Included title",
+              "children": []
+            }
+          ]
+        },
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": []
+        }
+      ]
+    },
+    "html.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-raw",
+              "attributes": {},
+              "content": "<div class=\"raw\">Raw <b>HTML</b></div>",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "in_column.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-section",
+              "attributes": {},
+              "children": [
+                {
+                  "tag": "mj-column",
+                  "attributes": {},
+                  "children": [
+                    {
+                      "tag": "mj-text",
+                      "attributes": {},
+                      "content": "Nested partial",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "nested.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-section",
+              "attributes": {},
+              "children": [
+                {
+                  "tag": "mj-column",
+                  "attributes": {},
+                  "children": [
+                    {
+                      "tag": "mj-text",
+                      "attributes": {},
+                      "content": "Included partial",
+                      "children": []
+                    },
+                    {
+                      "tag": "mj-text",
+                      "attributes": {},
+                      "content": "Nested partial",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "mj-raw",
+              "attributes": {},
+              "content": "<div class=\"raw\">Raw <b>HTML</b></div>",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "whole_document.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-section",
+              "attributes": {},
+              "children": [
+                {
+                  "tag": "mj-column",
+                  "attributes": {},
+                  "children": [
+                    {
+                      "tag": "mj-text",
+                      "attributes": {
+                        "mj-class": "brand"
+                      },
+                      "content": "Full document",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "mj-head",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-attributes",
+              "attributes": {},
+              "children": [
+                {
+                  "tag": "mj-class",
+                  "attributes": {
+                    "name": "brand",
+                    "color": "#ff0000"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "whole_document_existing_head.mjml": {
+      "tag": "mjml",
+      "attributes": {},
+      "children": [
+        {
+          "tag": "mj-head",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-title",
+              "attributes": {},
+              "content": "Title",
+              "children": []
+            },
+            {
+              "tag": "mj-attributes",
+              "attributes": {},
+              "children": [
+                {
+                  "tag": "mj-class",
+                  "attributes": {
+                    "name": "brand",
+                    "color": "#ff0000"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "mj-body",
+          "attributes": {},
+          "children": [
+            {
+              "tag": "mj-section",
+              "attributes": {},
+              "children": [
+                {
+                  "tag": "mj-column",
+                  "attributes": {},
+                  "children": [
+                    {
+                      "tag": "mj-text",
+                      "attributes": {
+                        "mj-class": "brand"
+                      },
+                      "content": "Full document",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

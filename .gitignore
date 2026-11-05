@@ -25,3 +25,12 @@ mjml_eex-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+
+# Dev-only MJML packages used by spec_gen
+/spec_gen/node_modules/
+
+# Dialyzer PLTs
+/priv/plts/
+
+# macOS Finder metadata
+.DS_Store

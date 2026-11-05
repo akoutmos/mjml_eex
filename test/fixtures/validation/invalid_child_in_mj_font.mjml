@@ -1,0 +1,8 @@
+<mjml>
+  <mj-head>
+    <mj-font name="Raleway" href="https://example.com/raleway.css">
+      <mj-text>Hi</mj-text>
+    </mj-font>
+  </mj-head>
+  <mj-body></mj-body>
+</mjml>

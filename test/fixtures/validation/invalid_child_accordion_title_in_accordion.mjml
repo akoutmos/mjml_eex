@@ -1,0 +1,11 @@
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-accordion>
+          <mj-accordion-title>Q</mj-accordion-title>
+        </mj-accordion>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

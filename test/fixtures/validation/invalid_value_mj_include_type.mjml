@@ -1,0 +1,5 @@
+<mjml>
+  <mj-body>
+    <mj-include path="footer.mjml" type="js" />
+  </mj-body>
+</mjml>

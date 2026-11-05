@@ -1,0 +1,9 @@
+<mjml>
+  <mj-head>
+    <mj-title>Title</mj-title>
+  </mj-head>
+  <mj-body>
+    <mj-include path="../../test_includes/style.css" type="css" />
+    <mj-include path="../../test_includes/style.css" type="css" css-inline="inline" />
+  </mj-body>
+</mjml>

@@ -1,0 +1,693 @@
+# Forked from Phoenix.LiveView.HTMLAlgebra in Phoenix LiveView v1.2.12
+# (lib/phoenix_live_view/html_algebra.ex, https://github.com/phoenixframework/phoenix_live_view,
+# commit 83ab190). Phoenix LiveView is MIT licensed: Copyright (c) 2018 Chris McCord.
+#
+# Changes from upstream:
+#
+#   * mj-style (when a tag formatter formatted it) is the only "language" tag; style and
+#     script are kept verbatim by MjmlEEx.Formatter.
+#   * MJML tags are block-level, including self-closing ones.
+#   * Attributes are never reordered (upstream moves :let, :for and :if first).
+#   * EEx comments are {:eex_comment, text, meta}.
+#   * attr={"string"} is not flattened to attr="string" (it would change escaping), and
+#     <%= %> isn't migrated to {} inside mjml-no-curly-interpolation.
+# Kept close to upstream to ease future syncs, so this Credo check is disabled for this
+# file rather than restructuring it:
+# credo:disable-for-this-file Credo.Check.Refactor.CyclomaticComplexity
+defmodule MjmlEEx.Formatter.Algebra do
+  @moduledoc false
+
+  import Inspect.Algebra, except: [format: 2]
+
+  alias MjmlEEx.TagEngine.Tags
+
+  @languages ~w(mj-style)
+
+  # Reference for all inline elements so that we can tell the formatter to not
+  # force a line break. This list has been taken from here:
+  #
+  # https://web.archive.org/web/20220405120608/https://developer.mozilla.org/en-US/docs/Web/HTML/Inline_elements#list_of_inline_elements
+  #
+  # A notable omission is `<script>`, which is handled separately in `html_algebra.ex`.
+  @inline_tags ~w(a abbr acronym audio b bdi bdo big br button canvas cite
+  code data datalist del dfn em embed i iframe img input ins kbd label map
+  mark meter noscript object output picture progress q ruby s samp select slot
+  small span strong sub sup svg template textarea time u tt var video wbr)
+
+  # The formatter has two modes:
+  #
+  # * :normal
+  # * :preserve - for preserving text in <pre>, <script>, <style> and HTML Comment tags
+  #
+  @doc false
+  def build(tree, opts) when is_list(tree) do
+    # Components are block-level in MJML templates, so none are inline by default
+    {inline_matcher, opts} = Keyword.pop(opts, :inline_matcher, [])
+    {migrate, opts} = Keyword.pop(opts, :migrate_eex_to_curly_interpolation, true)
+    {attr_formatters, opts} = Keyword.pop!(opts, :attribute_formatters)
+
+    tree
+    |> block_to_algebra(%{
+      mode: :normal,
+      migrate: migrate,
+      attr_formatters: attr_formatters,
+      opts: opts,
+      inline_matcher: inline_matcher
+    })
+    |> group()
+  end
+
+  defp block_to_algebra([], _context), do: empty()
+
+  defp block_to_algebra(block, %{mode: :preserve} = context) do
+    concat =
+      Enum.reduce(block, empty(), fn node, doc ->
+        {_type, next_doc} = to_algebra(node, context)
+        concat(doc, next_doc)
+      end)
+
+    {force_unfit?, meta} =
+      Enum.find_value(block, fn
+        {:text, text, meta} ->
+          {String.contains?(text, "\n"), meta}
+
+        _ ->
+          {false, %{}}
+      end)
+
+    doc =
+      if force_unfit? do
+        concat |> force_unfit() |> group()
+      else
+        concat |> group()
+      end
+
+    newline_or_empty_before_text =
+      if meta[:newlines_before_text] && meta[:newlines_before_text] > 1 && !context[:verbatim] do
+        line()
+      else
+        empty()
+      end
+
+    newline_or_empty_after_text =
+      if meta[:newlines_after_text] && meta[:newlines_after_text] > 1 && !context[:verbatim] do
+        line()
+      else
+        empty()
+      end
+
+    concat([newline_or_empty_before_text, doc, newline_or_empty_after_text])
+  end
+
+  defp block_to_algebra([head | tail], context) do
+    {type, doc} =
+      head
+      |> to_algebra(context)
+      |> maybe_force_unfit()
+
+    Enum.reduce(tail, {head, type, doc}, fn next_node, {prev_node, prev_type, prev_doc} ->
+      {next_type, next_doc} =
+        next_node
+        |> to_algebra(context)
+        |> maybe_force_unfit()
+
+      doc =
+        cond do
+          prev_type == :inline and next_type == :inline ->
+            on_break =
+              if next_doc == empty() do
+                ""
+              else
+                inline_break(prev_node, next_node)
+              end
+
+            concat([prev_doc, on_break, next_doc])
+
+          prev_type == :newline and next_type == :inline ->
+            concat([prev_doc, line(), next_doc])
+
+          next_type == :newline ->
+            {:text, _text, %{newlines_before_text: newlines}} = next_node
+
+            if newlines > 1 do
+              concat([prev_doc, nest(line(), :reset), next_doc])
+            else
+              concat([prev_doc, next_doc])
+            end
+
+          true ->
+            # For most cases, we do want to `break("")` here because they are
+            # block tags (div, p, etc..). But, in case the previous or next token
+            # is a text without whitespace, such as:
+            #
+            #   (<div label="application programming interface">API</div>).
+            #
+            # We don't want to break("") otherwise it would format it like this:
+            #
+            #   (
+            #     <div label="application programming interface">API</div>
+            #   ).
+            #
+            # Therefore, this checks whether the previous or next token is not text
+            # and, if it is text, whether it contains whitespace.
+            cond do
+              # mrml ignores whitespace between MJML components, so they always get their own line
+              mjml_tag?(prev_node) or mjml_tag?(next_node) ->
+                concat([prev_doc, break(""), next_doc])
+
+              # Spaces between two tags become a single break, on the side of the next one
+              spaces_only?(next_node) ->
+                concat([prev_doc, next_doc])
+
+              text_ends_with_space?(prev_node) or text_starts_with_space?(next_node) ->
+                concat([prev_doc, break(""), next_doc])
+
+              text?(prev_node) or text?(next_node) or (tag?(prev_node) and tag?(next_node)) ->
+                concat([prev_doc, next_doc])
+
+              true ->
+                concat([prev_doc, break(""), next_doc])
+            end
+        end
+
+      {next_node, next_type, doc}
+    end)
+    |> elem(2)
+    |> group()
+  end
+
+  defp inline_break(prev_node, next_node) do
+    cond do
+      # We do not insert breaks when preserving.
+      # We may insert spaces though if both sides are text.
+      block_preserve?(prev_node) or block_preserve?(next_node) ->
+        if (text_ends_with_space?(prev_node) or text_starts_with_space?(next_node)) and
+             not (text_preserve?(prev_node) or text_preserve?(next_node)) do
+          " "
+        else
+          ""
+        end
+
+      # If we have a block followed by anything that is not a tag,
+      # we force a break.
+      tag_block?(prev_node) and not tag?(next_node) ->
+        break(" ")
+
+      (text_ends_with_space?(prev_node) or text_starts_with_space?(next_node)) and
+          not text_preserve?(prev_node) ->
+        flex_break(" ")
+
+      true ->
+        ""
+    end
+  end
+
+  defp tag_block?({:block, _, _, _, _, _, _}), do: true
+  defp tag_block?(_node), do: false
+
+  # MJML components get their own line. Function components and slots are laid out like
+  # HEEx's: they can render into an ending tag, where whitespace next to them matters
+  defp mjml_tag?({:block, :tag, name, _, _, _, _}), do: Tags.mjml?(name)
+  defp mjml_tag?({:self_close, :tag, name, _, _}), do: Tags.mjml?(name)
+  defp mjml_tag?(_node), do: false
+
+  defp tag?({:block, _, _, _, _, _, _}), do: true
+  defp tag?({:self_close, _, _, _, _}), do: true
+  defp tag?(_node), do: false
+
+  defp text?({:text, _, _}), do: true
+  defp text?(_), do: false
+
+  defp spaces_only?({:text, text, _meta}), do: text != "" and String.trim(text, " ") == ""
+  defp spaces_only?(_node), do: false
+
+  @codepoints ~c"\s\n\r\t"
+
+  defp text_starts_with_space?({:text, text, _meta}) when text != "",
+    do: :binary.first(text) in @codepoints
+
+  defp text_starts_with_space?(_node), do: false
+
+  defp text_ends_with_space?({:text, text, _meta}) when text != "",
+    do: :binary.last(text) in @codepoints
+
+  defp text_ends_with_space?(_node), do: false
+
+  defp block_preserve?({:block, _, _, _, _, %{mode: :preserve}, _}), do: true
+  defp block_preserve?({:body_expr, _, _}), do: true
+  defp block_preserve?({:eex, _, _}), do: true
+  defp block_preserve?(_node), do: false
+
+  defp text_preserve?({:text, _, %{mode: :preserve}}), do: true
+  defp text_preserve?(_), do: false
+
+  defp to_algebra({:html_comment, block}, context) do
+    children = block_to_algebra(block, %{context | mode: :preserve})
+    {:block, group(nest(children, :reset))}
+  end
+
+  # Only reached for mj-style content that a tag formatter formatted; otherwise mj-style is
+  # in preserve mode and kept verbatim by the clauses below
+  defp to_algebra(
+         {:block, _type, _name, attrs, block, %{tag_name: name, mode: :normal}, _close_meta},
+         context
+       )
+       when name in @languages do
+    children = block_to_algebra(block, %{context | mode: :preserve})
+
+    # Convert the whole block to text as there are no
+    # tags inside script/style, only text and EEx blocks.
+    lines =
+      children
+      |> Inspect.Algebra.format(:infinity)
+      |> IO.iodata_to_binary()
+      |> String.split(["\r\n", "\n"])
+      |> Enum.drop_while(&(trim_leading_ascii(&1) == ""))
+
+    indentation =
+      lines
+      |> Enum.map(&count_indentation(&1, 0))
+      |> Enum.min(fn -> :infinity end)
+      |> case do
+        :infinity -> 0
+        min -> min
+      end
+
+    doc =
+      case lines do
+        [] ->
+          line()
+
+        _ ->
+          text =
+            lines
+            |> Enum.map(&remove_indentation(&1, indentation))
+            |> text_to_algebra(0, [])
+
+          concat(nest(concat(line(), text), 2), line())
+      end
+
+    group =
+      concat([format_tag_open(name, attrs, context), doc, "</#{name}>"])
+      |> group()
+
+    {:block, group}
+  end
+
+  defp to_algebra(
+         {:block, _type, _name, attrs, block, %{tag_name: name} = meta, _close_meta},
+         %{mode: :preserve} = context
+       ) do
+    children = block_to_algebra(block, context)
+
+    children =
+      if inline?(name, context) and meta.mode != :preserve do
+        children
+      else
+        nest(children, 2)
+      end
+
+    tag =
+      concat([format_tag_open(name, attrs, context), children, "</#{name}>"])
+      |> group()
+
+    # MJML components (here, ending tags whose content is preserved) are block-level
+    if Tags.mjml?(name), do: {:block, tag}, else: {:inline, tag}
+  end
+
+  defp to_algebra(
+         {:block, _type, _name, _attrs, _block, %{mode: :preserve}, _close_meta} = doc,
+         context
+       ) do
+    to_algebra(doc, %{context | mode: :preserve})
+  end
+
+  defp to_algebra({:block, _type, _name, attrs, block, %{tag_name: name}, _close_meta}, context) do
+    # <%= ... %> can't become {...} where curly interpolation is turned off
+    context = if no_curly_interpolation?(attrs), do: %{context | migrate: false}, else: context
+    inline? = inline?(name, context)
+    {block, force_newline?} = trim_block_newlines(block, inline?)
+    inline? = inline? and not force_newline?
+
+    children =
+      case block do
+        [] -> empty()
+        _ when inline? -> block_to_algebra(block, context)
+        _ -> nest(concat(break(""), block_to_algebra(block, context)), 2)
+      end
+
+    children = if force_newline?, do: force_unfit(children), else: children
+
+    doc =
+      concat([
+        format_tag_open(name, attrs, context),
+        children,
+        if(inline?, do: empty(), else: break("")),
+        "</#{name}>"
+      ])
+      |> group()
+
+    if inline? do
+      {:inline, doc}
+    else
+      {:block, doc}
+    end
+  end
+
+  defp to_algebra({:self_close, type, _name, attrs, %{tag_name: name}}, context) do
+    doc =
+      concat([
+        "<#{name}",
+        build_attrs(attrs, " ", context.attr_formatters, context.opts),
+        "/>"
+      ])
+
+    if Tags.mjml?(name) or type != :tag, do: {:block, group(doc)}, else: {:inline, group(doc)}
+  end
+
+  # Handle EEX blocks within preserve tags
+  defp to_algebra({:eex_block, expr, block, meta}, %{mode: :preserve} = context) do
+    doc =
+      Enum.reduce(block, empty(), fn {block, expr, _clause_meta}, doc ->
+        # The clauses' text is printed as it is, blank lines included
+        children = block_to_algebra(block, Map.put(context, :verbatim, true))
+        expr = "<% #{expr} %>"
+        concat([doc, children, expr])
+      end)
+
+    {:block, group(concat("<%#{meta.opt} #{expr} %>", doc))}
+  end
+
+  # Handle EEX blocks
+  defp to_algebra({:eex_block, expr, block, meta}, context) do
+    {doc, _stab} =
+      Enum.reduce(block, {empty(), false}, fn {block, expr, _clause_meta}, {doc, stab?} ->
+        {block, _force_newline?} = trim_block_newlines(block, false)
+        {next_doc, stab?} = eex_block_to_algebra(expr, block, stab?, context)
+        {concat(doc, force_unfit(next_doc)), stab?}
+      end)
+
+    {:block, group(concat("<%#{meta.opt} #{expr} %>", doc))}
+  end
+
+  defp to_algebra({:eex_comment, text, _meta}, _context) do
+    {:inline, concat(["<%!--", text, "--%>"])}
+  end
+
+  defp to_algebra({:eex, text, %{opt: opt} = meta}, context) do
+    cond do
+      context.mode == :preserve ->
+        {:inline, concat(["<%#{opt} ", text, " %>"])}
+
+      context.migrate and opt == ~c"=" and safe_to_migrate?(text, 0) ->
+        to_algebra({:body_expr, text, meta}, context)
+
+      true ->
+        doc = expr_to_code_algebra(text, meta, context.opts)
+        {:inline, concat(["<%#{opt} ", doc, " %>"])}
+    end
+  end
+
+  defp to_algebra({:body_expr, text, meta}, context) do
+    if context.mode == :preserve do
+      {:inline, concat(["{", text, "}"])}
+    else
+      doc = expr_to_code_algebra(text, meta, context.opts)
+      {:inline, concat(["{", doc, "}"])}
+    end
+  end
+
+  # Handle text within <pre>/<script>/<style>/comment tags.
+  defp to_algebra({:text, text, _meta}, %{mode: :preserve}) when is_binary(text) do
+    {:inline, string(text)}
+  end
+
+  defp to_algebra({:text, text, %{mode: :preserve}}, _context) when is_binary(text) do
+    {:inline, string(text)}
+  end
+
+  # Handle text within other tags.
+  defp to_algebra({:text, text, _meta}, _context) when is_binary(text) do
+    case classify_leading(text) do
+      :spaces ->
+        {:inline, empty()}
+
+      :newline ->
+        {:newline, empty()}
+
+      :other ->
+        {:inline,
+         text
+         |> String.split(["\r\n", "\n"])
+         |> Enum.map(&trim_ascii/1)
+         |> Enum.drop_while(&(&1 == ""))
+         |> text_to_algebra(0, [])}
+    end
+  end
+
+  # Trimming only touches ASCII whitespace, since mrml renders other spaces (such as
+  # U+00A0) as text
+  defp trim_ascii(text), do: text |> trim_leading_ascii() |> trim_trailing_ascii()
+  defp trim_leading_ascii(text), do: String.trim_leading(text, " ") |> drop_leading_ascii()
+  defp trim_trailing_ascii(text), do: text |> String.reverse() |> trim_leading_ascii() |> String.reverse()
+
+  defp drop_leading_ascii(<<char, rest::binary>>) when char in ~c" \t\n\r", do: drop_leading_ascii(rest)
+  defp drop_leading_ascii(text), do: text
+
+  defp no_curly_interpolation?(attrs) do
+    Enum.any?(attrs, fn {attr, _value, _meta} -> attr == Tags.no_curly_interpolation_attribute() end)
+  end
+
+  defp inline?(name, context) do
+    name in @inline_tags or Enum.any?(context.inline_matcher, &(name =~ &1))
+  end
+
+  # Empty newline
+  defp text_to_algebra(["" | lines], newlines, acc),
+    do: text_to_algebra(lines, newlines + 1, acc)
+
+  # Text
+  # Text
+  defp text_to_algebra([line | lines], 0, acc),
+    do: text_to_algebra(lines, 0, [string(line), line() | acc])
+
+  # Text
+  #
+  # Text
+  defp text_to_algebra([line | lines], _newlines, acc),
+    do: text_to_algebra(lines, 0, [string(line), line(), nest(line(), :reset) | acc])
+
+  # Final clause: single line
+  defp text_to_algebra([], _, [doc, _line]),
+    do: doc
+
+  defp text_to_algebra([], _, []),
+    do: empty()
+
+  # Final clause: multiple lines
+  defp text_to_algebra([], _, acc),
+    do: acc |> Enum.reverse() |> tl() |> concat()
+
+  defp build_attrs([], on_break, _formatters, _opts), do: on_break
+
+  defp build_attrs([attr], on_break, formatters, opts) do
+    concat([" ", render_attribute(attr, formatters, opts), on_break])
+  end
+
+  defp build_attrs(attrs, on_break, formatters, opts) do
+    doc =
+      attrs
+      |> Enum.reduce(
+        empty(),
+        &concat([&2, break(" "), render_attribute(&1, formatters, opts)])
+      )
+      |> nest(2)
+      |> concat(break(on_break))
+
+    if distinct_lines?(attrs, -1) do
+      doc |> force_unfit() |> group()
+    else
+      group(doc)
+    end
+  end
+
+  defp distinct_lines?([{_, _, %{line: line}} | _], line), do: false
+  defp distinct_lines?([{_, _, %{line: line}} | tail], _line), do: distinct_lines?(tail, line)
+  defp distinct_lines?([], _line), do: true
+
+  defp format_tag_open(name, attrs, context),
+    do: concat(["<#{name}", build_attrs(attrs, "", context.attr_formatters, context.opts), ">"])
+
+  defp render_attribute({:root, {:expr, expr, _}, _}, _formatters, _opts), do: ~s({#{expr}})
+
+  defp render_attribute({name, _, _} = attr, formatters, opts)
+       when is_map_key(formatters, name) do
+    attr
+    |> formatters[name].render_attribute(opts)
+    |> render_attribute(%{}, opts)
+  end
+
+  defp render_attribute({attr, {:string, value, %{delimiter: ?'}}, _}, _formatters, _opts) do
+    if String.contains?(value, ["\"", "'"]) do
+      ~s(#{attr}='#{value}')
+    else
+      ~s(#{attr}="#{value}")
+    end
+  end
+
+  defp render_attribute({attr, {:string, value, _meta}, _}, _formatters, _opts),
+    do: ~s(#{attr}="#{value}")
+
+  defp render_attribute({attr, {:expr, value, meta}, _}, _formatters, opts) do
+    case expr_to_quoted(value, meta, opts) do
+      # Unlike upstream, attr={"foo"} is not flattened to attr="foo": expression values are
+      # HTML-escaped and literal values aren't, so that would change the output
+      {{:__block__, _meta, [string]} = block, []} when is_binary(string) ->
+        group(concat(["#{attr}={", quoted_to_code_algebra(block, [], opts), "}"]))
+
+      {{atom, _, _}, []} when atom in [:<<>>, :<>] ->
+        concat(["#{attr}={", string(value), "}"])
+
+      {{:__block__, _, [[_ | _]]} = quoted, []} ->
+        expr = quoted_to_code_algebra(quoted, [], opts)
+        group(concat(["#{attr}={", expr, "}"]))
+
+      {quoted, comments} ->
+        expr =
+          break("")
+          |> concat(quoted_to_code_algebra(quoted, comments, opts))
+          |> nest(2)
+
+        group(concat(["#{attr}={", expr, concat(break(""), "}")]))
+    end
+  end
+
+  defp render_attribute({attr, {_, value, _meta}, _}, _formatters, _opts),
+    do: ~s(#{attr}=#{value})
+
+  defp render_attribute({attr, nil, _}, _formatters, _opts), do: ~s(#{attr})
+
+  # Handle EEx clauses
+  #
+  # {[], "something ->", %{...}}
+  # {[{:block, :tag, "p", [], [...], %{...}, %{...}}], "else", %{...}}
+  defp eex_block_to_algebra(expr, block, stab?, context) when is_list(block) do
+    indent = if stab?, do: 4, else: 2
+
+    document =
+      if block == [] do
+        # The first clause in cond/case and general empty clauses.
+        empty()
+      else
+        line()
+        |> concat(block_to_algebra(block, context))
+        |> nest(indent)
+      end
+
+    stab? = String.ends_with?(expr, "->")
+    indent = if stab?, do: 2, else: 0
+
+    next =
+      line()
+      |> concat("<% #{expr} %>")
+      |> nest(indent)
+
+    {concat(document, next), stab?}
+  end
+
+  defp expr_to_quoted(expr, meta, opts) do
+    string_to_quoted_opts = [
+      literal_encoder: &{:ok, {:__block__, &2, [&1]}},
+      token_metadata: true,
+      unescape: false,
+      line: meta.line,
+      column: meta.column,
+      file: Keyword.get(opts, :file, "nofile")
+    ]
+
+    Code.string_to_quoted_with_comments!(expr, string_to_quoted_opts)
+  end
+
+  defp expr_to_code_algebra(expr, meta, opts) do
+    {quoted, comments} = expr_to_quoted(expr, meta, opts)
+    quoted_to_code_algebra(quoted, comments, opts)
+  end
+
+  defp quoted_to_code_algebra(quoted, comments, opts) do
+    Code.quoted_to_algebra(quoted, Keyword.merge(opts, escape: false, comments: comments))
+  end
+
+  @doc false
+  def classify_leading(text), do: classify_leading(text, :spaces)
+
+  def classify_leading(<<char, rest::binary>>, mode) when char in [?\s, ?\t],
+    do: classify_leading(rest, mode)
+
+  def classify_leading(<<?\n, rest::binary>>, _), do: classify_leading(rest, :newline)
+  def classify_leading(<<>>, mode), do: mode
+  def classify_leading(_rest, _), do: :other
+
+  defp maybe_force_unfit({:block, doc}), do: {:block, force_unfit(doc)}
+  defp maybe_force_unfit(doc), do: doc
+
+  defp trim_block_newlines(block, inline?) do
+    {tail, first_force?} =
+      pop_head_if_only_spaces_or_newlines(block, inline?, :newlines_before_text)
+
+    {block, last_force?} =
+      tail
+      |> Enum.reverse()
+      |> pop_head_if_only_spaces_or_newlines(inline?, :newlines_after_text)
+
+    force? = if Enum.empty?(block), do: false, else: first_force? or last_force?
+
+    {Enum.reverse(block), force?}
+  end
+
+  defp pop_head_if_only_spaces_or_newlines(
+         [{:text, text, meta} | tail] = block,
+         inline?,
+         newlines_key
+       ) do
+    force? = Map.fetch!(meta, newlines_key) > 0
+
+    cond do
+      trim_leading_ascii(text) == "" ->
+        {tail, force?}
+
+      inline? and not force? and whitespace_around?(text, newlines_key) ->
+        text = cleanup_extra_spaces(text, newlines_key)
+        meta = Map.put(meta, :mode, :preserve)
+        {[{:text, text, meta} | tail], false}
+
+      true ->
+        {block, force?}
+    end
+  end
+
+  defp pop_head_if_only_spaces_or_newlines(block, _inline?, _where), do: {block, false}
+
+  defp cleanup_extra_spaces(text, :newlines_before_text), do: " " <> trim_leading_ascii(text)
+  defp cleanup_extra_spaces(text, :newlines_after_text), do: trim_trailing_ascii(text) <> " "
+
+  defp whitespace_around?(text, :newlines_before_text), do: :binary.first(text) in ~c"\s\t"
+  defp whitespace_around?(text, :newlines_after_text), do: :binary.last(text) in ~c"\s\t"
+
+  defp count_indentation(<<?\t, rest::binary>>, indent), do: count_indentation(rest, indent + 2)
+  defp count_indentation(<<?\s, rest::binary>>, indent), do: count_indentation(rest, indent + 1)
+  defp count_indentation(<<>>, _indent), do: :infinity
+  defp count_indentation(_, indent), do: indent
+
+  defp remove_indentation(rest, 0), do: rest
+  defp remove_indentation(<<?\t, rest::binary>>, indent), do: remove_indentation(rest, indent - 2)
+  defp remove_indentation(<<?\s, rest::binary>>, indent), do: remove_indentation(rest, indent - 1)
+  defp remove_indentation(rest, _indent), do: rest
+
+  defp safe_to_migrate?(~S[\{] <> rest, acc), do: safe_to_migrate?(rest, acc)
+  defp safe_to_migrate?(~S[\}] <> rest, acc), do: safe_to_migrate?(rest, acc)
+  defp safe_to_migrate?("{" <> rest, acc), do: safe_to_migrate?(rest, acc + 1)
+  defp safe_to_migrate?("}" <> _rest, 0), do: false
+  defp safe_to_migrate?("}" <> rest, acc), do: safe_to_migrate?(rest, acc - 1)
+  defp safe_to_migrate?(<<_::utf8, rest::binary>>, acc), do: safe_to_migrate?(rest, acc)
+  defp safe_to_migrate?(<<>>, acc), do: acc == 0
+end

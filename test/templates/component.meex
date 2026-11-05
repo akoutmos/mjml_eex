@@ -1,0 +1,12 @@
+<mjml>
+  <MjmlEEx.Test.Components.head_block title="Hello!" />
+  <mj-body background-color="#F2F2F2">
+    <mj-section padding="10px 0 20px 0">
+      <mj-column>
+        <mj-text align="center" color="#9B9B9B" font-size="11px">Writing A Good Headline For Your Advertisement</mj-text>
+        <.data_row :for={index <- @some_data} data={"Some data - #{index}"} />
+        <.cta href="https://example.com" background-color="#5FA91D" padding-top="20px">SIGN UP TODAY!!</.cta>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

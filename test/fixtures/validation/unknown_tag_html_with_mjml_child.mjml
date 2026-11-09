@@ -1,0 +1,11 @@
+<mjml>
+  <mj-body>
+    <div>
+      <mj-section>
+      <mj-column>
+        <mj-text>Hi</mj-text>
+      </mj-column>
+    </mj-section>
+    </div>
+  </mj-body>
+</mjml>

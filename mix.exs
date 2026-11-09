@@ -5,7 +5,7 @@ defmodule MjmlEEx.MixProject do
     [
       app: :mjml_eex,
       version: project_version(),
-      elixir: ">= 1.15.0",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "MJML EEx",
       source_url: "https://github.com/akoutmos/mjml_eex",
@@ -16,6 +16,7 @@ defmodule MjmlEEx.MixProject do
       package: package(),
       deps: deps(),
       docs: docs(),
+      dialyzer: dialyzer(),
       aliases: aliases()
     ]
   end
@@ -40,13 +41,15 @@ defmodule MjmlEEx.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/test_components", "test/test_layouts"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:dev), do: ["lib", "spec_gen/mix", "screenshots/mix"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp package do
     [
       name: "mjml_eex",
-      files: ~w(lib mix.exs README.md LICENSE CHANGELOG.md VERSION),
+      # .formatter.exs exports the formatter settings for `import_deps: [:mjml_eex]`
+      files: ~w(lib images mix.exs .formatter.exs README.md LICENSE CHANGELOG.md VERSION),
       licenses: ["MIT"],
       maintainers: ["Alex Koutmos"],
       links: %{
@@ -59,9 +62,69 @@ defmodule MjmlEEx.MixProject do
   defp docs do
     [
       main: "readme",
-      source_ref: "master",
+      # Releases are tagged with their version, such as 1.0.0-rc.1
+      source_ref: project_version(),
       logo: "guides/images/logo.svg",
-      extras: ["README.md"]
+      # Guides reference their images as images/..., which works on GitHub and in the docs
+      assets: %{"guides/images" => "images"},
+      extras: [
+        "README.md",
+        "guides/getting_started.md",
+        "guides/templates.md",
+        "guides/components.md",
+        "guides/core_components.md",
+        "guides/prebuilt_templates.md",
+        "guides/layouts.md",
+        "guides/includes.md",
+        "guides/validation.md",
+        "guides/formatting.md",
+        "guides/configuration.md",
+        "guides/telemetry.md",
+        "guides/migrating_from_0x.md",
+        "CHANGELOG.md"
+      ],
+      groups_for_extras: [
+        Guides: ~r{guides/(?!migrating)},
+        Upgrading: ["guides/migrating_from_0x.md", "CHANGELOG.md"]
+      ],
+      groups_for_modules: [
+        Templates: [MjmlEEx, MjmlEEx.Component, MjmlEEx.Rendered],
+        "Core components": [MjmlEEx.CoreComponents, MjmlEEx.Theme],
+        "Prebuilt templates": [
+          MjmlEEx.Templates.Welcome,
+          MjmlEEx.Templates.VerifyEmail,
+          MjmlEEx.Templates.MagicLink,
+          MjmlEEx.Templates.OneTimePassword,
+          MjmlEEx.Templates.ForgotPassword,
+          MjmlEEx.Templates.TeamInvitation,
+          MjmlEEx.Templates.SecurityAlert,
+          MjmlEEx.Templates.TrialConversion,
+          MjmlEEx.Templates.PaymentFailed,
+          MjmlEEx.Templates.Invoice,
+          MjmlEEx.Templates.OrderConfirmation,
+          MjmlEEx.Templates.Webinar,
+          MjmlEEx.Templates.Newsletter,
+          MjmlEEx.Templates.ProductLaunch,
+          MjmlEEx.Templates.FlashSale
+        ],
+        Errors: [MjmlEEx.ParseError, MjmlEEx.ValidationError],
+        Formatting: [MjmlEEx.Formatter, MjmlEEx.Formatter.TagFormatter],
+        Compilers: [MjmlEEx.Compiler, MjmlEEx.Compilers.Rust],
+        Telemetry: [MjmlEEx.Telemetry]
+      ],
+      # The spec and screenshot generators are dev-only tasks for maintainers, and aren't part
+      # of the package
+      filter_modules: fn module, _metadata ->
+        module not in [Mix.Tasks.MjmlEex.Gen.Spec, Mix.Tasks.MjmlEex.Gen.Screenshots]
+      end
+    ]
+  end
+
+  defp dialyzer do
+    [
+      # The formatter plugin and the spec generator task use Mix
+      plt_add_apps: [:mix],
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
     ]
   end
 
@@ -69,18 +132,18 @@ defmodule MjmlEEx.MixProject do
   defp deps do
     [
       # Production deps
-      {:mjml, "~> 4.0 or ~> 5.0"},
-      {:phoenix_html, "~> 3.2 or ~> 4.0"},
+      {:mjml, "~> 6.0"},
+      {:phoenix_html, "~> 4.0"},
       {:telemetry, "~> 1.0"},
-      {:erlexec, "~> 2.2", optional: true},
 
       # Development deps
       {:gettext, "~> 1.0", only: :test},
-      {:ex_doc, "~> 0.34", only: :dev},
+      {:stream_data, "~> 1.1", only: :test},
+      {:ex_doc, "~> 0.40", only: :dev},
       {:excoveralls, "~> 0.18", only: [:test, :dev], runtime: false},
-      {:doctor, "~> 0.21", only: :dev},
+      {:doctor, "~> 0.23", only: :dev},
       {:credo, "~> 1.7", only: :dev},
-      {:git_hooks, "~> 0.7", only: [:test, :dev], runtime: false}
+      {:dialyxir, "~> 1.4", only: :dev, runtime: false}
     ]
   end
 
@@ -96,15 +159,17 @@ defmodule MjmlEEx.MixProject do
     |> String.trim()
   end
 
+  # The README references its images as guides/images/...
   defp copy_files(_) do
-    # Set up directory structure
-    File.mkdir_p!("./doc/guides/images")
+    File.mkdir_p!("./doc/guides")
+    File.mkdir_p!("./doc/images")
 
-    # Copy over image files
-    "./guides/images/"
-    |> File.ls!()
-    |> Enum.each(fn image_file ->
-      File.cp!("./guides/images/#{image_file}", "./doc/guides/images/#{image_file}")
-    end)
+    File.cp_r!("./guides/images", "./doc/guides/images")
+    File.cp_r!("./images", "./doc/images")
+
+    # Both this copy and ExDoc's copy of the assets include the .DS_Store files Finder makes
+    for path <- Path.wildcard("./doc/**/.DS_Store", match_dot: true) do
+      File.rm!(path)
+    end
   end
 end

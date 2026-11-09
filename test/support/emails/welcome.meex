@@ -1,0 +1,14 @@
+<mjml>
+  <mj-head>
+    <mj-title>{greeting(@first_name)}</mj-title>
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px">{greeting(@first_name)}!</mj-text>
+        <mj-button :if={@cta_url} href={@cta_url}>Get started</mj-button>
+        <mj-text :for={item <- @items}>Item: {item}</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

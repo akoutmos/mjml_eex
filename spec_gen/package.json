@@ -1,0 +1,11 @@
+{
+  "name": "mjml-eex-spec-gen",
+  "private": true,
+  "description": "Dev-only: dumps the MJML component spec and type test vectors for mjml_eex. Not shipped in the Hex package.",
+  "license": "MIT",
+  "dependencies": {
+    "mjml-core": "5.4.1",
+    "mjml-preset-core": "5.4.1",
+    "mjml-validator": "5.4.1"
+  }
+}

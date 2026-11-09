@@ -1,0 +1,6 @@
+<mj-section>
+  <mj-column>
+    <mj-text>Included partial</mj-text>
+    <mj-include path="nested/nested.mjml" />
+  </mj-column>
+</mj-section>

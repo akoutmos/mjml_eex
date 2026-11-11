@@ -266,11 +266,39 @@ defmodule MjmlEEx.TemplatesTest do
 
   defp render(template), do: render(template, all_assigns(template))
 
+  describe "marketing templates" do
+    test "require a non-blank unsubscribe URL and address" do
+      for template <- [Webinar, Newsletter, ProductLaunch, FlashSale],
+          key <- [:unsubscribe_url, :address],
+          value <- [nil, " "] do
+        assert_raise ArgumentError, ~r/#{inspect(template)} requires a non-blank #{inspect(key)}/, fn ->
+          template.to_html(Map.put(@required[template], key, value))
+        end
+      end
+    end
+  end
+
+  describe "list assigns" do
+    test "raise for elements in the wrong shape, rather than leaving them out" do
+      for {template, assign} <- [{Invoice, :totals}, {OrderConfirmation, :totals}, {Newsletter, :social}] do
+        assigns = Map.put(@required[template], assign, [%{label: "Tax", value: "$1"}])
+
+        assert_raise ArgumentError,
+                     ~r/the #{inspect(assign)} assign of #{inspect(template)} must be a list of 2-element tuples/,
+                     fn ->
+                       template.to_html(assigns)
+                     end
+
+        assert template.to_html(Map.put(@required[template], assign, nil)) =~ "</html>"
+      end
+    end
+  end
+
   describe "every template" do
     test "renders valid MJML with every assign, and with only the required ones" do
       for template <- @templates do
-        assert render(template) =~ ~s(<mjml lang="en">)
-        assert render(template, @required[template]) =~ ~s(<mjml lang="en">)
+        assert render(template) =~ ~s(<mjml dir="auto" lang="en">)
+        assert render(template, @required[template]) =~ ~s(<mjml dir="auto" lang="en">)
       end
     end
 
@@ -279,6 +307,10 @@ defmodule MjmlEEx.TemplatesTest do
         mjml = render(template, Map.merge(@required[template], %{preview: "Custom preview", lang: "fr", dir: "rtl"}))
         assert mjml =~ "<mj-preview>Custom preview</mj-preview>", "#{inspect(template)} doesn't take :preview"
         assert mjml =~ ~s(<mjml dir="rtl" lang="fr">), "#{inspect(template)} doesn't take :lang and :dir"
+
+        assert_raise ArgumentError, ~r/attr :dir/, fn ->
+          template.to_html(Map.put(@required[template], :dir, "right"))
+        end
       end
     end
 

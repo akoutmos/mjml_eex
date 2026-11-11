@@ -26,9 +26,9 @@ defmodule MjmlEEx.TagEngine.Includes do
   @spec expand([tuple()], String.t()) :: {[tuple()], [String.t()]}
   def expand(nodes, file) do
     if contains_include?(nodes) do
-      state = %{files: [], head: [], stack: [Path.expand(file)]}
+      state = %{files: [], head: [], head_from: nil, conditional?: false, stack: [Path.expand(file)]}
       {nodes, state} = expand_nodes(nodes, Path.dirname(file), file, state)
-      nodes = add_to_head(nodes, Enum.reverse(state.head), file)
+      nodes = add_to_head(nodes, Enum.reverse(state.head), state.head_from)
       {nodes, Enum.reverse(state.files)}
     else
       {nodes, []}
@@ -55,19 +55,21 @@ defmodule MjmlEEx.TagEngine.Includes do
   defp expand_node({:block, :tag, "mj-include", attrs, _children, meta, _close}, dir, file, state),
     do: include(attrs, meta, dir, file, state)
 
+  # Includes inside a tag with :if or :for, or in an EEx block, are conditional (or repeated)
   defp expand_node({:block, type, name, attrs, children, meta, close}, dir, file, state) do
-    {children, state} = expand_nodes(children, dir, file, state)
-    {[{:block, type, name, attrs, children, meta, close}], state}
+    conditional? = state.conditional? or Enum.any?(attrs, &match?({special, _, _} when special in [":if", ":for"], &1))
+    {children, inner} = expand_nodes(children, dir, file, %{state | conditional?: conditional?})
+    {[{:block, type, name, attrs, children, meta, close}], %{inner | conditional?: state.conditional?}}
   end
 
   defp expand_node({:eex_block, expr, clauses, meta}, dir, file, state) do
-    {clauses, state} =
-      Enum.map_reduce(clauses, state, fn {children, clause, clause_meta}, state ->
+    {clauses, inner} =
+      Enum.map_reduce(clauses, %{state | conditional?: true}, fn {children, clause, clause_meta}, state ->
         {children, state} = expand_nodes(children, dir, file, state)
         {{children, clause, clause_meta}, state}
       end)
 
-    {[{:eex_block, expr, clauses, meta}], state}
+    {[{:eex_block, expr, clauses, meta}], %{inner | conditional?: state.conditional?}}
   end
 
   defp expand_node(node, _dir, _file, state), do: {[node], state}
@@ -119,14 +121,14 @@ defmodule MjmlEEx.TagEngine.Includes do
             do: [{"inline", {:string, "inline", %{delimiter: ?"}}, meta}],
             else: []
 
-        {[], %{state | head: [element("mj-style", inline, content, meta) | state.head]}}
+        {[], add_head(state, [element("mj-style", inline, content, meta)], meta, file)}
 
       _mjml ->
-        include_mjml(content, included, state)
+        include_mjml(content, included, meta, file, state)
     end
   end
 
-  defp include_mjml(content, included, state) do
+  defp include_mjml(content, included, meta, file, state) do
     interpolation = Path.extname(included) == ".meex"
 
     nodes =
@@ -143,7 +145,11 @@ defmodule MjmlEEx.TagEngine.Includes do
         {:block, :tag, "mjml", _, children, _, _} ->
           {body, state} = children |> child_nodes("mj-body") |> expand_nodes(Path.dirname(included), included, state)
           {head, state} = children |> child_nodes("mj-head") |> expand_nodes(Path.dirname(included), included, state)
-          {body, %{state | head: Enum.reverse(head) ++ state.head}}
+
+          case Enum.reject(head, &blank_text?/1) do
+            [] -> {body, state}
+            head -> {body, add_head(state, head, meta, file)}
+          end
 
         nil ->
           expand_nodes(nodes, Path.dirname(included), included, state)
@@ -159,17 +165,35 @@ defmodule MjmlEEx.TagEngine.Includes do
     end)
   end
 
-  # Adds the collected head nodes to the document's mj-head, creating it if needed
-  defp add_to_head(nodes, [], _file), do: nodes
+  # Head content from an include, kept to add to the document's mj-head. It's added when the
+  # template compiles, so it can't come from a conditional include. `head_from` is the first
+  # include that added some, for errors.
+  defp add_head(state, nodes, meta, file) do
+    if state.conditional? do
+      error!(
+        "type=\"css\" includes and included mj-head content can't be in an EEx block or a tag with :if or " <>
+          ":for, because they're added to the document's mj-head when the template compiles, whatever the condition",
+        meta,
+        file
+      )
+    end
 
-  defp add_to_head(nodes, head, file) do
+    %{state | head: Enum.reverse(nodes) ++ state.head, head_from: state.head_from || {meta, file}}
+  end
+
+  defp blank_text?({:text, text, _meta}), do: String.trim(text) == ""
+  defp blank_text?(_node), do: false
+
+  # Adds the collected head nodes to the document's mj-head, creating it if needed
+  defp add_to_head(nodes, [], _head_from), do: nodes
+
+  defp add_to_head(nodes, head, {meta, file}) do
     case Enum.split_with(nodes, &match?({:block, :tag, "mjml", _, _, _, _}, &1)) do
       {[], _} ->
-        [first | _] = head
-
         error!(
-          "type=\"css\" includes and included mj-head content need a whole document with an <mjml> root",
-          node_meta(first),
+          "type=\"css\" includes and included mj-head content need a whole document with an <mjml> root. " <>
+            "A template with a layout is a fragment: put them in the layout",
+          meta,
           file
         )
 
@@ -198,10 +222,6 @@ defmodule MjmlEEx.TagEngine.Includes do
       children ++ [{:block, :tag, "mj-head", [], head, meta, meta}]
     end
   end
-
-  defp node_meta({:block, _, _, _, _, meta, _}), do: meta
-  defp node_meta({:self_close, _, _, _, meta}), do: meta
-  defp node_meta(_node), do: %{line: 1, column: 1}
 
   defp element(name, attrs, content, meta) do
     meta = Map.merge(meta, %{tag_name: name, special: []})

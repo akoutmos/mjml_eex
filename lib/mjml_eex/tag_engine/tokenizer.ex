@@ -48,13 +48,16 @@ defmodule MjmlEEx.TagEngine.Tokenizer do
   * `file` - Can be either a file or a string "nofile".
   * `source` - The contents of the file as binary to be tokenized.
   * `interpolation` - When `false`, `{...}` is never treated as an Elixir expression.
+  * `raw_text_tags` - More tags whose content is raw text, such as all of MJML's ending tags
+    when converting rendered MJML to plain text.
   """
-  def init(indentation, file, source, interpolation \\ true) do
+  def init(indentation, file, source, interpolation \\ true, raw_text_tags \\ []) do
     %{
       file: file,
       column_offset: indentation + 1,
       braces: if(interpolation, do: :enabled, else: :disabled),
       interpolation: interpolation,
+      raw_text_tags: raw_text_tags,
       context: [],
       text_start: nil,
       source: source,
@@ -404,7 +407,7 @@ defmodule MjmlEEx.TagEngine.Tokenizer do
         cond do
           # Raw text has no interpolation and no closing tag that pops the brace counter, so
           # an mjml-no-curly-interpolation that came before mjml-raw-text ends here
-          Tags.raw_text?(name, attrs) ->
+          Tags.raw_text?(name, attrs) or name in state.raw_text_tags ->
             handle_raw_text(rest, name, line, column + 1, [], acc, end_childless_tag(acc, state))
 
           # Void tags have no closing tag to pop the brace counter

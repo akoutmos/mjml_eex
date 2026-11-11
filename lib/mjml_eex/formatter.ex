@@ -132,6 +132,18 @@ defmodule MjmlEEx.Formatter do
     :unformattable -> source
   end
 
+  # Rewrites <%# %> comments as <%!-- --%>. Whole EEx tags are matched, <%!-- --%> comments
+  # first, so that a <%# %> inside one (in commented-out code, or in a string) is left alone:
+  # rewriting it would end the comment around it early.
+  @eex_tags ~r/<%!--.*?--%>|<%#(.*?)%>|<%.*?%>/s
+
+  defp migrate_eex_comments(source) do
+    Regex.replace(@eex_tags, source, fn
+      "<%#" <> _ = _comment, content -> "<%!--" <> content <> "--%>"
+      tag, _content -> tag
+    end)
+  end
+
   defp do_format(source, opts) do
     line_length = opts[:mjml_line_length] || opts[:line_length] || @default_line_length
 
@@ -143,7 +155,7 @@ defmodule MjmlEEx.Formatter do
       source
       |> String.trim_leading("\uFEFF")
       |> String.replace("\r\n", "\n")
-      |> then(&Regex.replace(~r/<%#(.*?)%>/s, &1, "<%!--\\1--%>"))
+      |> migrate_eex_comments()
 
     newlines = :binary.matches(source, ["\r\n", "\n"])
 

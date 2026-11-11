@@ -48,7 +48,8 @@ defmodule MjmlEEx.Templates.OrderConfirmation do
     * `:address` - your company's address, for the footer.
     * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
       language of the template's text.
-    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
+    * `:dir` - the direction of the text: `"ltr"`, `"rtl"` or `"auto"` (the default). The
+      template's layout stays left to right.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -75,7 +76,7 @@ defmodule MjmlEEx.Templates.OrderConfirmation do
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
   attr :lang, :string, default: "en"
-  attr :dir, :string, default: nil
+  attr :dir, :string, default: "auto", values: ~w(ltr rtl auto)
 
   def render(assigns) do
     assigns = assign(assigns, :theme, MjmlEEx.Theme.current())
@@ -123,7 +124,7 @@ defmodule MjmlEEx.Templates.OrderConfirmation do
           <:col :let={item} align="right" width="25%">{item.price}</:col>
         </.table>
         <.list>
-          <:item :for={{label, value} <- @totals} title={label}>{value}</:item>
+          <:item :for={{label, value} <- pairs!(@totals, :totals)} title={label}>{value}</:item>
           <:item title="Total" strong>{@total}</:item>
         </.list>
         <%= if @shipping_address != [] || @payment_method do %>
@@ -147,5 +148,22 @@ defmodule MjmlEEx.Templates.OrderConfirmation do
       <.footer :if={@address}>{@address}</.footer>
     </.email>
     """
+  end
+
+  # A :for with a {_, _} pattern would leave out the elements that don't match it
+  defp pairs!(nil, _assign), do: []
+
+  defp pairs!(list, assign) do
+    Enum.each(list, fn
+      {_, _} ->
+        :ok
+
+      element ->
+        raise ArgumentError,
+              "the #{inspect(assign)} assign of #{inspect(__MODULE__)} must be a list of 2-element tuples, such as " <>
+                "[{\"Subtotal\", \"$100.00\"}], got: #{inspect(element)}"
+    end)
+
+    list
   end
 end

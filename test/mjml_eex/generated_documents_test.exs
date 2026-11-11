@@ -313,6 +313,11 @@ defmodule MjmlEEx.GeneratedDocumentsTest do
   defp escape(value, {"mj-font", "href"}),
     do: URI.encode(value, &(&1 > ?\s and &1 != 127 and &1 not in ~c[<>"'()\\{}]))
 
+  # A background-url goes into an inline style's url('...'), so the same characters are
+  # percent-encoded, and then it's HTML-escaped like other values
+  defp escape(value, {tag, "background-url"}) when tag in ~w(mj-section mj-wrapper mj-hero),
+    do: value |> URI.encode(&(&1 > ?\s and &1 != 127 and &1 not in ~c[<>"'()\\{}])) |> escape(nil)
+
   defp escape(value, _context), do: value |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 
   ## Properties

@@ -18,7 +18,8 @@ defmodule MjmlEEx.Compilers.Rust do
     be atoms, such as `:"Noto Color Emoji"`.
 
   - `:include_path` - The directory that `mj-include` paths are resolved from. Relative paths are expanded
-    from the current working directory, and symlinks are resolved.
+    from the current working directory, and symlinks are resolved. It's only for MJML strings passed to
+    `MjmlEEx.to_html/2`: templates expand their `mj-include` tags when they compile.
 
   - `:include_loader` - An `Mjml.ParserOptions.LocalIncludeLoader` struct. Use this instead of
     `:include_path` if you need to build the loader yourself.

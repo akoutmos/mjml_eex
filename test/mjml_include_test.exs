@@ -145,10 +145,33 @@ defmodule MjmlIncludeTest do
       end
     end
 
-    test "head content in a fragment" do
-      assert_raise MjmlEEx.ParseError, ~r/need a whole document with an <mjml> root/, fn ->
-        render(~s(<mj-include path="style.css" type="css" />))
+    test "head content in a fragment, pointing at the include" do
+      error =
+        assert_raise MjmlEEx.ParseError, ~r/need a whole document with an <mjml> root. A template with a layout/, fn ->
+          render(~s(<mj-section><mj-column><mj-include path="style.css" type="css" /></mj-column></mj-section>))
+        end
+
+      assert {Path.basename(error.file), error.line} == {"email.ex", 3}
+    end
+
+    test "an included document with an empty mj-head can go in a fragment" do
+      assert render(~s(<mj-wrapper><mj-include path="empty_head.mjml" /></mj-wrapper>)) =~
+               "<mj-text>Empty head</mj-text>"
+    end
+
+    test "head content from conditional includes" do
+      for body <- [
+            ~s(<mjml><mj-body><%= if @name do %><mj-include path="style.css" type="css" /><% end %></mj-body></mjml>),
+            ~s(<mjml><mj-body><mj-wrapper :if={@name}><mj-include path="style.css" type="css" /></mj-wrapper></mj-body></mjml>),
+            ~s(<mjml><mj-body><mj-wrapper :for={_ <- [1, 2]}><mj-include path="full.mjml" /></mj-wrapper></mj-body></mjml>)
+          ] do
+        assert_raise MjmlEEx.ParseError, ~r/can't be in an EEx block or a tag with :if or :for/, fn -> render(body) end
       end
+
+      # Includes without head content can be conditional
+      assert render(
+               ~s(<mjml><mj-body><%= if @name do %><mj-include path="empty_head.mjml" /><% end %></mj-body></mjml>)
+             ) =~ "Empty head"
     end
 
     test "validation errors point into the included file" do

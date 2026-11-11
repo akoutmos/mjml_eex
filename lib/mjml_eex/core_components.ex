@@ -91,7 +91,9 @@ defmodule MjmlEEx.CoreComponents do
 
     * `title` - the document's title (`mj-title`).
     * `preview` - the preview text that inboxes show after the subject (`mj-preview`).
-    * Other attributes, such as `lang`, are passed to `mjml`.
+    * Other attributes are passed to `mjml`. Set `lang` to the email's language, such as
+      `lang="en"`, so that screen readers read it in the right voice (without it, the email
+      declares `lang="und"`, undetermined), and `dir="rtl"` for right-to-left languages.
 
   ## Slots
 
@@ -1483,6 +1485,10 @@ defmodule MjmlEEx.CoreComponents do
   `tumblr`, `xing`, `github`, `instagram`, `web`, `snapchat`, `youtube`, `vimeo`, `medium`,
   `soundcloud` and `dribbble`. For anything else, give the URL of an icon with `src`.
 
+  Each icon links to its `href`, such as your company's page on that network. (In `mj-social`,
+  some networks, such as `facebook`, `x` and `linkedin`, link to a page that shares the `href`
+  instead. For share buttons, write an `mj-social` yourself.)
+
   ## Attributes
 
     * `brand_colors` - use each network's own color instead of `muted`. Defaults to `false`.
@@ -1527,7 +1533,7 @@ defmodule MjmlEEx.CoreComponents do
     <mj-social :if={@link != []} {@attrs}>
       <mj-social-element
         :for={link <- @link}
-        name={link.name}
+        name={profile_network(link.name)}
         href={link.href}
         src={link[:src]}
         alt={link.name}
@@ -1538,6 +1544,14 @@ defmodule MjmlEEx.CoreComponents do
     </mj-social>
     """
   end
+
+  # For these networks, MJML turns the href into a "share this page" link (such as
+  # facebook.com/sharer/sharer.php?u=...). Their -noshare variants, with the same icon and color,
+  # link to the href itself.
+  @share_networks ~w(facebook twitter x google pinterest linkedin tumblr xing)
+
+  defp profile_network(name) when name in @share_networks, do: name <> "-noshare"
+  defp profile_network(name), do: name
 
   ## Helpers
 

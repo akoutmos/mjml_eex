@@ -41,10 +41,14 @@ defmodule MjmlEEx.Templates.Invoice do
     * `:billed_to` - who the invoice is for, as a list of lines.
     * `:pay_url` - the URL of the page to pay the invoice on.
     * `:pdf_url` - the URL to download the invoice from.
+    * `:preview` - the preview text. Defaults to the amount due and the due date.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:support_url` - the URL to contact you with questions about the invoice.
     * `:address` - your company's address, for the footer.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -65,16 +69,21 @@ defmodule MjmlEEx.Templates.Invoice do
   attr :billed_to, :list, default: []
   attr :pay_url, :string, default: nil
   attr :pdf_url, :string, default: nil
+  attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     ~MJML"""
     <.email
       title={"Invoice #{@invoice_number} from #{@product_name}"}
-      preview={"Your invoice for #{@amount_due} is due #{@due_date}."}
+      preview={@preview || "Your invoice for #{@amount_due} is due #{@due_date}."}
+      lang={@lang}
+      dir={@dir}
     >
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.card padding="32px 0">

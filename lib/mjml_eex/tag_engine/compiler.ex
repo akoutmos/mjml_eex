@@ -122,7 +122,8 @@ defmodule MjmlEEx.TagEngine.Compiler do
           raise CompileError,
             file: first.file,
             line: first.line,
-            description: "invalid MJML (#{length(errors)} #{pluralize(errors)}):\n\n#{details}\n"
+            description:
+              "invalid MJML (#{length(errors)} #{pluralize(errors)}):\n\n#{details}\n" <> Validator.rules_hint(errors)
       end
     end
   end

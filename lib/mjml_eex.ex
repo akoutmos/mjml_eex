@@ -30,10 +30,21 @@ defmodule MjmlEEx do
   templates.
 
   `render/1` returns the rendered MJML as an `MjmlEEx.Rendered` struct. To get the email
-  HTML, call the generated `to_html/1`:
+  HTML, call the generated `to_html/1`, and for a plain-text version of the email, the
+  generated `to_text/1` (see `to_text/1`):
 
   ```elixir
   MyApp.Emails.Welcome.to_html(first_name: "Alex", cta_url: "https://example.com")
+  MyApp.Emails.Welcome.to_text(first_name: "Alex", cta_url: "https://example.com")
+  ```
+
+  `to_html/1` and `to_text/1` are overridable. Define them in the module to change the
+  assigns, for example, and call `super/1` to render:
+
+  ```elixir
+  def to_html(assigns) do
+    assigns |> Map.new() |> Map.put_new(:year, Date.utc_today().year) |> super()
+  end
   ```
 
   ## Template syntax
@@ -134,6 +145,17 @@ defmodule MjmlEEx do
       def to_html(assigns) do
         MjmlEEx.__to_html__(__MODULE__, assigns, unquote(compiler_opts))
       end
+
+      @doc """
+      Renders the template with the given assigns as plain text, for the text part of the
+      email. See `MjmlEEx.to_text/1`.
+      """
+      @spec to_text(map() | keyword()) :: String.t()
+      def to_text(assigns) do
+        MjmlEEx.__to_text__(__MODULE__, assigns)
+      end
+
+      defoverridable to_html: 1, to_text: 1
     end
   end
 
@@ -181,7 +203,7 @@ defmodule MjmlEEx do
         quote do
           @external_resource unquote(template)
           unquote(introspection(env, env.file))
-          unquote(Component.component_definitions(env.module))
+          unquote(Component.__component_definitions__(env.module))
           unquote(layout_wrapper(env.module))
         end
 
@@ -189,7 +211,7 @@ defmodule MjmlEEx do
         validation = Module.get_attribute(env.module, :__mjml_eex_validation__)
         source = File.read!(template)
 
-        Component.record_source(env.module, :render, %{
+        Component.__record_source__(env.module, :render, %{
           source: source,
           file: template,
           line: 1,
@@ -211,7 +233,7 @@ defmodule MjmlEEx do
         unless Map.has_key?(Module.get_attribute(env.module, :__mjml_eex_components__), :render) do
           attrs = Module.get_attribute(env.module, :__mjml_eex_pending_attrs__)
           slots = Module.get_attribute(env.module, :__mjml_eex_pending_slots__)
-          Component.register(env.module, :render, :def, attrs, slots, env.line)
+          Component.__register__(env.module, :render, :def, attrs, slots, env.line)
         end
 
         spec = env.module |> Module.get_attribute(:__mjml_eex_components__) |> Map.fetch!(:render)
@@ -230,7 +252,7 @@ defmodule MjmlEEx do
             unquote(ast)
           end
 
-          unquote(Component.component_definitions(env.module, except: [:render]))
+          unquote(Component.__component_definitions__(env.module, except: [:render]))
           unquote(layout_wrapper(env.module))
         end
 
@@ -316,7 +338,7 @@ defmodule MjmlEEx do
        when is_atom(module) and not is_nil(module) do
     if Module.open?(module) and Module.has_attribute?(module, :__mjml_eex_components__) do
       info = Map.merge(%{source: source, file: caller.file, column: 1, indentation: 0}, Map.new(position))
-      Component.record_source(module, fun, info)
+      Component.__record_source__(module, fun, info)
     end
   end
 
@@ -430,11 +452,11 @@ defmodule MjmlEEx do
   Compiles rendered MJML (or an MJML string) to email HTML with the configured compiler.
 
   `compiler_opts` are merged on top of the application config (see `compiler_opts/1`).
-  Raises if the MJML can't be compiled.
+  Raises `MjmlEEx.CompileError` if the MJML can't be compiled.
   """
   @spec to_html(Rendered.t() | String.t(), keyword()) :: String.t()
   def to_html(mjml, compiler_opts \\ []) do
-    compile!(to_mjml(mjml), configured_compiler(), compiler_opts(compiler_opts))
+    compile!(to_mjml(mjml), configured_compiler(), compiler_opts(compiler_opts), nil)
   end
 
   @doc """
@@ -446,6 +468,48 @@ defmodule MjmlEEx do
   @spec to_mjml(Rendered.t() | String.t()) :: String.t()
   def to_mjml(%Rendered{} = rendered), do: to_string(rendered)
   def to_mjml(mjml) when is_binary(mjml), do: mjml
+
+  @doc """
+  Converts rendered MJML (or an MJML string) to plain text, for the text part of a multipart
+  email. Email modules have a generated `to_text/1` that renders the template and does this:
+
+  ```elixir
+  new()
+  |> html_body(MyApp.Emails.Welcome.to_html(assigns))
+  |> text_body(MyApp.Emails.Welcome.to_text(assigns))
+  ```
+
+  The text follows the email's content rather than its layout:
+
+  - `mj-head` is left out, and so are HTML comments and elements with `display:none`.
+  - The HTML in `mj-text` and `mj-raw` becomes paragraphs separated by blank lines, with
+    lists, quotes, preformatted text and tables (with their columns lined up). Links are
+    written as `text (url)`.
+  - Buttons and linked images are written as `label: url`, and social and navbar links one
+    per line.
+  - Dividers are written as `---`. Other images and spacers are left out.
+
+  Raises `MjmlEEx.ParseError` if the MJML can't be parsed.
+
+  ## Examples
+
+      iex> MjmlEEx.to_text(\"\"\"
+      ...> <mjml><mj-body><mj-section><mj-column>
+      ...>   <mj-text><h1>Welcome, Jane!</h1><p>Read the <a href="https://example.com/docs">docs</a>.</p></mj-text>
+      ...>   <mj-button href="https://example.com/start">Get started</mj-button>
+      ...> </mj-column></mj-section></mj-body></mjml>
+      ...> \"\"\")
+      "Welcome, Jane!\\n\\nRead the docs (https://example.com/docs).\\n\\nGet started: https://example.com/start\\n"
+  """
+  @spec to_text(Rendered.t() | String.t()) :: String.t()
+  def to_text(mjml), do: mjml |> to_mjml() |> MjmlEEx.Text.convert()
+
+  @doc false
+  def __to_text__(module, assigns) do
+    assigns = Map.new(assigns)
+    Component.__check_assigns__(module, assigns)
+    assigns |> module.render() |> to_text()
+  end
 
   @doc false
   def __to_html__(module, assigns, template_compiler_opts) do
@@ -465,15 +529,15 @@ defmodule MjmlEEx do
     :telemetry.span([:mjml_eex, :render], metadata, fn ->
       Component.__check_assigns__(module, assigns)
       mjml = assigns |> module.render() |> to_mjml()
-      html = compile!(mjml, compiler, compiler_opts)
+      html = compile!(mjml, compiler, compiler_opts, module)
       {html, Map.merge(metadata, %{mjml_template: mjml, rendered_html: html})}
     end)
   end
 
-  defp compile!(mjml, compiler, compiler_opts) do
+  defp compile!(mjml, compiler, compiler_opts, module) do
     case MjmlEEx.Compiler.compile(compiler, mjml, compiler_opts) do
       {:ok, html} -> html
-      {:error, error} -> raise "Failed to compile MJML template: #{inspect(error)}"
+      {:error, reason} -> raise MjmlEEx.CompileError, reason: reason, module: module
     end
   end
 

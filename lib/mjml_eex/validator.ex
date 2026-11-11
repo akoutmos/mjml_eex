@@ -56,6 +56,23 @@ defmodule MjmlEEx.Validator do
   @doc false
   def rules, do: @rules
 
+  @doc false
+  # The end of a build error: how to turn down the rules that its errors broke
+  @spec rules_hint([ValidationError.t()]) :: String.t()
+  def rules_hint(errors) do
+    case errors |> Enum.map(& &1.rule) |> Enum.uniq() |> Enum.filter(&(&1 in @rules)) do
+      [] ->
+        ""
+
+      rules ->
+        levels = Enum.map_join(rules, ", ", &"#{&1}: :warn")
+
+        "\nTo allow them, set their rules to :warn or :skip, for the whole app or for one module:\n\n" <>
+          "    config :mjml_eex, validation: [#{levels}]\n" <>
+          "    use MjmlEEx, validation: [#{levels}]\n"
+    end
+  end
+
   @doc """
   Resolves the level of every rule from the `config :mjml_eex, validation: ...` application
   config and the given override (a template's `validation:` option or `validate/2`'s). Each is

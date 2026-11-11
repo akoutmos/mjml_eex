@@ -26,10 +26,14 @@ defmodule MjmlEEx.Templates.TeamInvitation do
     * `:message` - a note from the inviter.
     * `:role` - the role the user will have, such as `"Editor"`.
     * `:expires_in` - how long the invitation lasts. Defaults to `"7 days"`.
+    * `:preview` - the preview text. Defaults to `:message`, or an invitation to join the team.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:support_url` - the URL of your help page, linked in the footer.
     * `:address` - your company's address, for the footer.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -48,16 +52,21 @@ defmodule MjmlEEx.Templates.TeamInvitation do
   attr :message, :string, default: nil
   attr :role, :string, default: nil
   attr :expires_in, :string, default: "7 days"
+  attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     ~MJML"""
     <.email
       title={"#{@inviter_name} invited you to join #{@team_name} on #{@product_name}"}
-      preview={@message || "Join #{@team_name} on #{@product_name}."}
+      preview={@preview || @message || "Join #{@team_name} on #{@product_name}."}
+      lang={@lang}
+      dir={@dir}
     >
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.card padding="40px 0 32px">

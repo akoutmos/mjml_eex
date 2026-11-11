@@ -40,12 +40,17 @@ defmodule MjmlEEx.TagEngine.Runtime do
     end
   end
 
-  # mrml copies mj-font's href into a CSS @import in a <style> element, where entities aren't
-  # decoded, so only quotes are escaped (a & escaped as &amp; would break the URL)
+  # mrml copies mj-font's href as is into a <link href="..."> and into a CSS `@import url(...)`
+  # in a <style> element, where entities aren't decoded, so it can't be HTML-escaped (a &
+  # escaped as &amp; would break the URL). Instead, the characters that could end the url(...),
+  # the attribute, the <style> element or the conditional comment around them are
+  # percent-encoded, which keeps the URL working.
   defp unescaped_url("mj-font", {"href", value}) when is_binary(value),
-    do: {"href", {:safe, String.replace(value, "\"", "&quot;")}}
+    do: {"href", {:safe, URI.encode(value, &font_url_char?/1)}}
 
   defp unescaped_url(_tag, attribute), do: attribute
+
+  defp font_url_char?(char), do: char > ?\s and char != 127 and char not in ~c[<>"'()\\{}]
 
   @doc false
   # Interpolated values that are lists may contain rendered templates, as from

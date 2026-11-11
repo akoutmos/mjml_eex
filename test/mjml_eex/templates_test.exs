@@ -51,17 +51,30 @@ defmodule MjmlEEx.TemplatesTest do
       time: "10:00 AM PT",
       description: "A live walkthrough.",
       register_url: @url,
-      unsubscribe_url: @url
+      unsubscribe_url: @url,
+      address: "Acme Inc., 1 Market St, San Francisco"
     },
-    Newsletter => %{product_name: "Acme", title: "The Acme Dispatch", unsubscribe_url: @url},
+    Newsletter => %{
+      product_name: "Acme",
+      title: "The Acme Dispatch",
+      unsubscribe_url: @url,
+      address: "Acme Inc., 1 Market St, San Francisco"
+    },
     ProductLaunch => %{
       product_name: "Acme",
       headline: "Introducing Insights",
       description: "Dashboards that build themselves.",
       cta_url: @url,
-      unsubscribe_url: @url
+      unsubscribe_url: @url,
+      address: "Acme Inc., 1 Market St, San Francisco"
     },
-    FlashSale => %{product_name: "Acme", headline: "40% off everything", shop_url: @url, unsubscribe_url: @url},
+    FlashSale => %{
+      product_name: "Acme",
+      headline: "40% off everything",
+      shop_url: @url,
+      unsubscribe_url: @url,
+      address: "Acme Inc., 1 Market St, San Francisco"
+    },
     MagicLink => %{product_name: "Acme", sign_in_url: @url},
     Welcome => %{product_name: "Acme", cta_url: @url},
     TeamInvitation => %{product_name: "Acme", inviter_name: "Maya Patel", team_name: "Globex", accept_url: @url},
@@ -256,9 +269,41 @@ defmodule MjmlEEx.TemplatesTest do
   describe "every template" do
     test "renders valid MJML with every assign, and with only the required ones" do
       for template <- @templates do
-        assert render(template) =~ "<mjml>"
-        assert render(template, @required[template]) =~ "<mjml>"
+        assert render(template) =~ ~s(<mjml lang="en">)
+        assert render(template, @required[template]) =~ ~s(<mjml lang="en">)
       end
+    end
+
+    test "takes the preview text, the language and the direction" do
+      for template <- @templates do
+        mjml = render(template, Map.merge(@required[template], %{preview: "Custom preview", lang: "fr", dir: "rtl"}))
+        assert mjml =~ "<mj-preview>Custom preview</mj-preview>", "#{inspect(template)} doesn't take :preview"
+        assert mjml =~ ~s(<mjml dir="rtl" lang="fr">), "#{inspect(template)} doesn't take :lang and :dir"
+      end
+    end
+
+    test "renders a text version with the content and the links" do
+      for template <- @templates do
+        text = template.to_text(all_assigns(template))
+
+        assert text =~ "Acme: https://acme.com\n\n", "#{inspect(template)} doesn't start with the linked logo"
+        assert text =~ "Acme Inc., 1 Market St, San Francisco", "#{inspect(template)} has no footer"
+        refute text =~ ~r/<[a-z\/!]|&[a-z]+;|\n\n\n|[ \t]\n/, "#{inspect(template)}'s text has HTML or loose whitespace"
+
+        assert template.to_text(@required[template]) =~ "Acme"
+      end
+    end
+
+    test "renders tables in the text version with their columns lined up" do
+      text = Invoice.to_text(all_assigns(Invoice))
+
+      assert text =~ "Billed to       Jane Cooper\n                Globex Corporation\n"
+
+      assert text =~
+               "Description     Qty  Amount\n\nPro plan        10   $100.00\nOct 1 – Oct 31\n\nStorage         1    $8.00"
+
+      assert text =~ "Pay this invoice: https://acme.com/x"
+      assert text =~ "Questions about this invoice? Contact us (https://acme.com/x) and we'll help."
     end
 
     test "requires its required assigns" do

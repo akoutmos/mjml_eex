@@ -111,12 +111,35 @@ defmodule MjmlEEx.ComponentTest do
       assert MjmlEEx.to_html(mjml) =~ "Cake"
     end
 
+    test "import only the public API into the module" do
+      imported =
+        for {name, arity} <- MjmlEEx.Component.__info__(:functions) ++ MjmlEEx.Component.__info__(:macros),
+            not String.starts_with?(Atom.to_string(name), "_"),
+            do: {name, arity}
+
+      assert Enum.sort(imported) == [
+               assign: 3,
+               assign_new: 3,
+               assigns_to_attributes: 1,
+               assigns_to_attributes: 2,
+               attr: 2,
+               attr: 3,
+               render_slot: 1,
+               render_slot: 2,
+               slot: 1,
+               slot: 2,
+               slot: 3
+             ]
+
+      refute function_exported?(Components, :__components__, 0)
+    end
+
     test "record their declarations" do
       assert %{cta: %{attrs: [%{name: :href, required: true}, %{name: :rest, type: :global, for: "mj-button"}]}} =
-               Components.__components__()
+               Components.__mjml_eex_components__()
 
       assert %{table: %{slots: [%{name: :column, attrs: [%{name: :width, type: :string}]}]}} =
-               Components.__components__()
+               Components.__mjml_eex_components__()
     end
 
     test "raise for a :let pattern that doesn't match" do
@@ -176,7 +199,7 @@ defmodule MjmlEEx.ComponentTest do
         end
         """)
 
-      assert %{render: %{attrs: [%{name: :name, required: true}]}} = module.__components__()
+      assert %{render: %{attrs: [%{name: :name, required: true}]}} = module.__mjml_eex_components__()
       assert_raise ArgumentError, ~r/missing required attr :name/, fn -> module.to_html(%{}) end
     end
   end
@@ -206,6 +229,11 @@ defmodule MjmlEEx.ComponentTest do
 
                  email.ex:4:59: unknown attribute colour for <Components.cta> (did you mean "color"?)
                  email.ex:4:72: Attribute padding-top has invalid value: 9 for type Unit, only accepts (px, %) units and 1 value(s) (for <Components.cta>)
+
+             To allow them, set their rules to :warn or :skip, for the whole app or for one module:
+
+                 config :mjml_eex, validation: [component_attribute: :warn]
+                 use MjmlEEx, validation: [component_attribute: :warn]
              """
 
       assert_raise CompileError, ~r/missing required attribute href for <Components.cta>/, fn ->

@@ -476,6 +476,26 @@ defmodule MjmlEEx.CoreComponentsTest do
       mjml = in_column(~MJML|<.social brand_colors><:link name="x" href="https://x.com/acme" /></.social>|)
       refute mjml =~ "background-color"
     end
+
+    test "links every network to its href, not to a page that shares it" do
+      networks = ~w(facebook twitter x google pinterest linkedin tumblr xing github instagram)
+      assigns = %{networks: networks}
+
+      html =
+        MjmlEEx.to_html(
+          in_column(~MJML"""
+          <.social>
+            <:link :for={name <- @networks} name={name} href={"https://#{name}.example.com/acme"} />
+          </.social>
+          """)
+        )
+
+      hrefs = Regex.scan(~r/<a href="([^"]*)"/, html, capture: :all_but_first) |> List.flatten() |> Enum.uniq()
+
+      assert hrefs == Enum.map(networks, &"https://#{&1}.example.com/acme")
+      assert html =~ ~s(alt="linkedin")
+      assert html =~ "linkedin.png"
+    end
   end
 
   describe "hero/1" do

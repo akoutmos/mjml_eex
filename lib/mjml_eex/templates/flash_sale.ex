@@ -18,7 +18,8 @@ defmodule MjmlEEx.Templates.FlashSale do
       %{name: "Stoneware mug", price: "$32", sale_price: "$19", image: "https://acme.com/mug.png", url: "https://acme.com/mug"},
       %{name: "Glazed vase", price: "$68", sale_price: "$40", image: "https://acme.com/vase.png", url: "https://acme.com/vase"}
     ],
-    unsubscribe_url: "https://acme.com/unsubscribe"
+    unsubscribe_url: "https://acme.com/unsubscribe",
+    address: "Acme Inc., 1 Market St, San Francisco"
   )
   ```
 
@@ -28,6 +29,7 @@ defmodule MjmlEEx.Templates.FlashSale do
     * `:headline` (required) - the offer, such as `"40% off everything"`.
     * `:shop_url` (required) - the URL of the sale.
     * `:unsubscribe_url` (required) - the URL to unsubscribe, linked in the footer.
+    * `:address` (required) - your company's postal address, for the footer.
     * `:description` - a sentence under the headline.
     * `:label` - the text above the headline. Defaults to `"Flash sale"`.
     * `:code` - a promo code.
@@ -44,9 +46,11 @@ defmodule MjmlEEx.Templates.FlashSale do
     * `:preview` - the preview text. Defaults to the headline and `:ends`.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
-    * `:address` - your company's address, for the footer.
     * `:social` - social links for the footer, as a keyword list of `mj-social` names and
       URLs, such as `[instagram: "https://instagram.com/acme"]`.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -61,6 +65,7 @@ defmodule MjmlEEx.Templates.FlashSale do
   attr :headline, :string, required: true
   attr :shop_url, :string, required: true
   attr :unsubscribe_url, :string, required: true
+  attr :address, :string, required: true
   attr :description, :string, default: nil
   attr :label, :string, default: "Flash sale"
   attr :code, :string, default: nil
@@ -73,14 +78,15 @@ defmodule MjmlEEx.Templates.FlashSale do
   attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
-  attr :address, :string, default: nil
   attr :social, :list, default: []
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     assigns = assign(assigns, :theme, MjmlEEx.Theme.current())
 
     ~MJML"""
-    <.email title={@headline} preview={@preview || Enum.join(Enum.reject([@headline, @ends], &is_nil/1), ". ")}>
+    <.email title={@headline} preview={@preview || Enum.join(Enum.reject([@headline, @ends], &is_nil/1), ". ")} lang={@lang} dir={@dir}>
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.hero variant="dark" background_image={@background_image} padding="56px 0 48px">
         <.badge solid align="center" text-transform="uppercase" letter-spacing="2px" padding="0 25px">

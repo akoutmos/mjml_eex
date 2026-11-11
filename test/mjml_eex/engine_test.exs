@@ -166,6 +166,25 @@ defmodule MjmlEEx.EngineTest do
       assert html =~ "@import url(https://fonts.example.com/css?family=Inter&family=Roboto)"
     end
 
+    test "a dynamic mj-font href can't break out of the CSS @import or the link tag" do
+      module =
+        sigil(
+          ~S|<mjml><mj-head><mj-font name="Inter" {@attrs} /><mj-font name="Mono" href={@href} /></mj-head><mj-body><mj-section><mj-column><mj-text font-family="Inter">x</mj-text><mj-text font-family="Mono">y</mj-text></mj-column></mj-section></mj-body></mjml>|
+        )
+
+      payload = ~s|x.css);}</style><a href="https://evil.example">Verify</a><style>{a{|
+      html = MjmlEEx.to_html(module.render(attrs: [href: payload], href: payload <> " 'x'\\"))
+
+      refute html =~ "evil.example\""
+      refute html =~ "<a href"
+      refute html =~ "</style><a"
+
+      assert html =~
+               "@import url(x.css%29;%7D%3C/style%3E%3Ca%20href=%22https://evil.example%22%3EVerify%3C/a%3E%3Cstyle%3E%7Ba%7B)"
+
+      assert html =~ "%7Ba%7B%20%27x%27%5C)"
+    end
+
     test "obsolete void tags that mrml doesn't treat as void keep their slash" do
       module = sigil(~S|<mj-text><keygen /><br /></mj-text>|)
       assert render(module, []) == "<mj-text><keygen /><br></mj-text>"

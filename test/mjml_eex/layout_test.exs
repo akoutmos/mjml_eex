@@ -141,6 +141,12 @@ defmodule MjmlEEx.LayoutTest do
       assert mjml =~ "<mj-title>Default title</mj-title>"
       assert mjml =~ "<mj-text>Default title</mj-text>"
     end
+
+    test "to_text/1 renders the email in its layout, and checks the assigns" do
+      assert DefaultsEmail.to_text(%{}) == "Default title\n"
+      assert DefaultsEmail.to_text(title: "Hi & welcome") == "Hi & welcome\n"
+      assert_raise ArgumentError, ~r/attr :title/, fn -> DefaultsEmail.to_text(title: 42) end
+    end
   end
 
   describe "function component layouts" do

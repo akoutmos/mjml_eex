@@ -12,7 +12,7 @@ options can be set for the whole app:
 config :mjml_eex,
   compiler_opts: [
     keep_comments: false,
-    fonts: %{"Noto Color Emoji" => "https://fonts.googleapis.com/css?family=Noto+Color+Emoji:400"}
+    fonts: %{"Noto Color Emoji": "https://fonts.googleapis.com/css?family=Noto+Color+Emoji:400"}
   ]
 ```
 
@@ -28,7 +28,7 @@ end
 | ------------------- | ---------------------------------------------------------------------------------------------------- |
 | `:keep_comments`    | When `false`, HTML comments are removed from the email. Defaults to `true`                           |
 | `:social_icon_path` | The base URL of the `mj-social` icons                                                                |
-| `:fonts`            | A map of font names to the URLs of their CSS files                                                   |
+| `:fonts`            | A map of font names (as atoms) to the URLs of their CSS files                                        |
 | `:include_path`     | The directory `mj-include` paths in MJML strings are resolved from (see [Includes](includes.md))     |
 | `:include_loader`   | An `Mjml.ParserOptions.LocalIncludeLoader`, as an alternative to `:include_path`                     |
 

@@ -145,6 +145,8 @@ LiveView's colocated templates.
 - **Fast rendering** with [MRML](https://github.com/jdrouet/mrml), the Rust
   implementation of MJML, through the precompiled
   [mjml_nif](https://github.com/adoptoposs/mjml_nif). No Node or Rust needed.
+- **Plain-text versions** of every email, for multipart emails, with the
+  generated `to_text/1`.
 - **A `mix format` plugin** for `.meex` files and `~MJML` sigils.
 - **Telemetry** events for every rendered email.
 

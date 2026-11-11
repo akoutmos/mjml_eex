@@ -107,7 +107,7 @@ defmodule MjmlEEx.MixProject do
           MjmlEEx.Templates.ProductLaunch,
           MjmlEEx.Templates.FlashSale
         ],
-        Errors: [MjmlEEx.ParseError, MjmlEEx.ValidationError],
+        Errors: [MjmlEEx.ParseError, MjmlEEx.ValidationError, MjmlEEx.CompileError],
         Formatting: [MjmlEEx.Formatter, MjmlEEx.Formatter.TagFormatter],
         Compilers: [MjmlEEx.Compiler, MjmlEEx.Compilers.Rust],
         Telemetry: [MjmlEEx.Telemetry]

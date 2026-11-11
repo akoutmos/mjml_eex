@@ -62,8 +62,8 @@ defmodule MjmlEEx.Component.Calls do
           _ -> :unknown
         end
 
-      Code.ensure_loaded?(module) and function_exported?(module, :__components__, 0) ->
-        case module.__components__() do
+      Code.ensure_loaded?(module) and function_exported?(module, :__mjml_eex_components__, 0) ->
+        case module.__mjml_eex_components__() do
           %{^fun => component} -> {:ok, component}
           _ -> :none
         end
@@ -80,8 +80,8 @@ defmodule MjmlEEx.Component.Calls do
     problems =
       for call <- module.__mjml_eex_calls__(),
           Code.ensure_loaded?(call.module),
-          function_exported?(call.module, :__components__, 0),
-          component = call.module.__components__()[call.fun],
+          function_exported?(call.module, :__mjml_eex_components__, 0),
+          component = call.module.__mjml_eex_components__()[call.fun],
           problem <- check(call, component),
           do: problem
 
@@ -127,7 +127,7 @@ defmodule MjmlEEx.Component.Calls do
 
   defp value_problems(call, %{name: name, type: type, values: values}, {:literal, value}, line, column) do
     cond do
-      not MjmlEEx.Component.type_matches?(type, value) ->
+      not type_matches?(type, value) ->
         [
           problem(call, :component_attribute, line, column,
             attribute: name,
@@ -303,13 +303,15 @@ defmodule MjmlEEx.Component.Calls do
         raise CompileError,
           file: first.file,
           line: first.line,
-          description: "invalid component calls (see the errors above)"
+          description: "invalid component calls (see the errors above)\n" <> Validator.rules_hint(errors)
     end
   end
 
   defp summary(errors) do
     count = if match?([_], errors), do: "1 error", else: "#{length(errors)} errors"
-    "invalid component call (#{count}):\n\n" <> Enum.map_join(errors, "\n", &("    " <> Exception.message(&1))) <> "\n"
+
+    "invalid component call (#{count}):\n\n" <>
+      Enum.map_join(errors, "\n", &("    " <> Exception.message(&1))) <> "\n" <> Validator.rules_hint(errors)
   end
 
   defp describe(%{message: message, hint: nil}), do: message
@@ -327,4 +329,15 @@ defmodule MjmlEEx.Component.Calls do
       details: nil
     })
   end
+
+  @doc false
+  def type_matches?(_type, nil), do: true
+  def type_matches?(:any, _value), do: true
+  def type_matches?(:string, value), do: is_binary(value)
+  def type_matches?(:integer, value), do: is_integer(value)
+  def type_matches?(:boolean, value), do: is_boolean(value)
+  def type_matches?(:atom, value), do: is_atom(value)
+  def type_matches?(:list, value), do: is_list(value)
+  def type_matches?(:map, value), do: is_map(value)
+  def type_matches?(:global, value), do: is_map(value) or is_list(value)
 end

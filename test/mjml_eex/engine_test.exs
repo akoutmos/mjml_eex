@@ -153,6 +153,13 @@ defmodule MjmlEEx.EngineTest do
     end
   end
 
+  describe "the template's Elixir code" do
+    test "keeps {:safe, list} tuples as written" do
+      module = sigil(~S|<mj-text>{Enum.join(Keyword.get([safe: ["a", "b"]], :safe), ",")}</mj-text>|)
+      assert render(module, []) == "<mj-text>a,b</mj-text>"
+    end
+  end
+
   describe "attributes" do
     test "runtime validation accepts raw/1 values" do
       Application.put_env(:mjml_eex, :runtime_validation, :raise)

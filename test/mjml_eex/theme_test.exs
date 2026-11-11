@@ -153,4 +153,32 @@ defmodule MjmlEEx.ThemeTest do
       assert Theme.current() == %Theme{}
     end
   end
+
+  describe "with_theme/2" do
+    test "sets the theme while the function runs, on top of the config, and returns its result" do
+      Application.put_env(:mjml_eex, :theme, radius: "4px")
+
+      assert Theme.with_theme([primary: "#0EA5E9"], fn -> Theme.current() end) ==
+               %Theme{primary: "#0EA5E9", radius: "4px"}
+
+      assert Theme.current() == %Theme{radius: "4px"}
+      refute Process.get({Theme, :theme})
+    end
+
+    test "puts back the theme from before, even when the function raises" do
+      Theme.put(primary: "#E11D48")
+
+      assert_raise RuntimeError, fn -> Theme.with_theme([primary: "#0EA5E9"], fn -> raise "boom" end) end
+      assert Theme.current().primary == "#E11D48"
+
+      assert Theme.with_theme(%{primary: "#0EA5E9"}, fn -> Theme.current().primary end) == "#0EA5E9"
+      assert Theme.current().primary == "#E11D48"
+    end
+
+    test "raises for invalid tokens without calling the function" do
+      assert_raise ArgumentError, ~r/invalid theme token :primary/, fn ->
+        Theme.with_theme([primary: "nope"], fn -> flunk("called") end)
+      end
+    end
+  end
 end

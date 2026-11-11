@@ -298,6 +298,8 @@ defmodule MjmlEEx.Theme do
   configured theme.
 
   Emails are rendered in the process that calls `to_html/1`, so put the theme in that process.
+  The theme stays until it's changed, so in processes that render emails for several brands,
+  use `with_theme/2` instead.
 
   Like `new/1`, it raises `ArgumentError` for invalid tokens. If they come from your users,
   check them with `validate/1` when they're saved.
@@ -312,6 +314,26 @@ defmodule MjmlEEx.Theme do
     Process.put(@key, merge(configured(), theme))
     :ok
   end
+
+  @doc """
+  Calls `fun` with a theme for the emails it renders, then puts back the theme from before,
+  even if `fun` raises. Like `put/1`, the tokens are applied on top of the configured theme.
+  Returns what `fun` returns.
+
+  Use it in processes that render emails for several brands one after the other, such as a
+  GenServer or a job worker, so that one email's theme doesn't stay for the next, like
+  `Gettext.with_locale/2` does for the locale:
+
+  ```elixir
+  MjmlEEx.Theme.with_theme([primary: account.brand_color], fn ->
+    MyApp.Emails.Welcome.to_html(assigns)
+  end)
+  ```
+
+  Raises `ArgumentError` for invalid tokens, without calling `fun`.
+  """
+  @spec with_theme(t() | map() | keyword(), (-> result)) :: result when result: term()
+  def with_theme(tokens, fun) when is_function(fun, 0), do: __with__(merge(configured(), tokens), fun)
 
   @doc false
   # Calls fun with theme as the current theme, then puts back the one before. Components use it

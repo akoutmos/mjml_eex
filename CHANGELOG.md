@@ -20,7 +20,8 @@ need updating. See the [Migrating from 0.x](guides/migrating_from_0x.md) guide.
   [Core components](guides/core_components.md) guide.
 - `MjmlEEx.Theme`: the colors, fonts and sizes of the core components. Set them for the app with
   `config :mjml_eex, :theme, ...`, or for one process with `MjmlEEx.Theme.put/1`. `MjmlEEx.Theme.validate/1` checks
-  values that come from your users, such as a brand color, without raising.
+  values that come from your users, such as a brand color, without raising, and `MjmlEEx.Theme.with_theme/2` sets a
+  theme only while a function renders.
 - Prebuilt templates for common emails, built with the core components: `MjmlEEx.Templates.Welcome`, `VerifyEmail`,
   `MagicLink`, `OneTimePassword`, `ForgotPassword`, `TeamInvitation`, `SecurityAlert`, `TrialConversion`,
   `PaymentFailed`, `Invoice`, `OrderConfirmation`, `Webinar`, `Newsletter`, `ProductLaunch` and `FlashSale`. Render
@@ -97,7 +98,7 @@ need updating. See the [Migrating from 0.x](guides/migrating_from_0x.md) guide.
   compiled with the Rust NIF. If you rely on the Node compiler, stay on mjml_eex 0.13 or implement your own compiler
   with the `MjmlEEx.Compiler` behaviour.
 
-## [0.13.0] - 2025-12-12
+## [0.13.0] - 2025-12-15
 
 - Upgraded to MJML 5.3
 - Allow comments (e.g. `<%!-- this is some comment --%>`) in templates
@@ -120,7 +121,7 @@ need updating. See the [Migrating from 0.x](guides/migrating_from_0x.md) guide.
 
 - Upgrades the dependencies to the latest versions.
 
-## [0.9.1] - 2022-02-10
+## [0.9.1] - 2023-02-13
 
 ### Changed
 

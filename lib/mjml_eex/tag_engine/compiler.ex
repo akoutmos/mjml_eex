@@ -55,24 +55,24 @@ defmodule MjmlEEx.TagEngine.Compiler do
 
   # The engine adds each piece of static markup ("<mj-text", ">", ...) as its own binary.
   # Joining adjacent ones makes the code much faster to compile (the Erlang compiler is slow
-  # with long lists of literals between variables) and the iodata shorter.
-  defp merge_static(ast) do
-    Macro.prewalk(ast, fn
-      {:safe, list} when is_list(list) ->
-        merged =
-          list
-          |> Enum.chunk_by(&is_binary/1)
-          |> Enum.flat_map(fn
-            [binary | _] = binaries when is_binary(binary) -> [IO.iodata_to_binary(binaries)]
-            others -> others
-          end)
+  # with long lists of literals between variables) and the iodata shorter. Only the engine's
+  # own {:safe, iodata}, the last expression of the blocks it returns, is merged, so that
+  # tuples in the template's Elixir code are left alone.
+  defp merge_static({:__block__, meta, exprs}) do
+    {dynamic, [{:safe, iodata}]} = Enum.split(exprs, -1)
 
-        {:safe, merged}
+    merged =
+      iodata
+      |> Enum.chunk_by(&is_binary/1)
+      |> Enum.flat_map(fn
+        [binary | _] = binaries when is_binary(binary) -> [IO.iodata_to_binary(binaries)]
+        others -> others
+      end)
 
-      node ->
-        node
-    end)
+    {:__block__, meta, dynamic ++ [{:safe, merged}]}
   end
+
+  defp end_block(substate), do: substate |> @engine.handle_end() |> merge_static()
 
   # Included files are recompiled into the template when they change
   defp track_files([], _caller), do: :ok
@@ -243,7 +243,7 @@ defmodule MjmlEEx.TagEngine.Compiler do
             # `case x do %><% pattern -> %>`: no placeholder before the first clause
             {quoted, acc_expr <> newlines <> " " <> clause_expr, clause_meta.line, true}
           else
-            clause_ast = children |> handle_node(@engine.handle_begin(substate), state) |> @engine.handle_end()
+            clause_ast = children |> handle_node(@engine.handle_begin(substate), state) |> end_block()
             key = length(quoted)
             acc_expr = acc_expr <> " __EEX__(#{key});" <> newlines <> " " <> clause_expr
             {[{key, clause_ast} | quoted], acc_expr, clause_meta.line, true}
@@ -512,7 +512,7 @@ defmodule MjmlEEx.TagEngine.Compiler do
           nil
 
         children ->
-          inner_ast = children |> handle_node(@engine.handle_begin(substate), state) |> @engine.handle_end()
+          inner_ast = children |> handle_node(@engine.handle_begin(substate), state) |> end_block()
 
           case let do
             nil ->
@@ -618,7 +618,7 @@ defmodule MjmlEEx.TagEngine.Compiler do
         fun.(attrs, substate)
 
       {special, attrs} ->
-        inner_ast = attrs |> fun.(@engine.handle_begin(substate)) |> @engine.handle_end()
+        inner_ast = attrs |> fun.(@engine.handle_begin(substate)) |> end_block()
         @engine.handle_expr(substate, "=", special_expr(special, inner_ast, meta))
     end
   end

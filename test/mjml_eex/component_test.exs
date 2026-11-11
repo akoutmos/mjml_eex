@@ -446,7 +446,7 @@ defmodule MjmlEEx.ComponentTest do
                end
                """)
 
-      assert_raise ArgumentError, ~r/unknown keys \[:mode\]/, fn ->
+      assert_raise ArgumentError, ~r/the :mode option was removed/, fn ->
         Code.eval_string("defmodule ModeComponents do\n use MjmlEEx.Component, mode: :runtime\nend")
       end
     end

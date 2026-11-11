@@ -262,9 +262,17 @@ defmodule MjmlEExTest do
   end
 
   describe "errors" do
-    test "use MjmlEEx rejects unknown options, such as 0.x's" do
-      assert_raise ArgumentError, ~r/unknown keys \[:mjml_template\]/, fn ->
+    test "use MjmlEEx rejects unknown options, and explains 0.x's" do
+      assert_raise ArgumentError, ~r/the :mjml_template option is now :template/, fn ->
         Code.compile_string("defmodule OldOptions do\n  use MjmlEEx, mjml_template: \"a.mjml.eex\"\nend")
+      end
+
+      assert_raise ArgumentError, ~r/the :mode option was removed/, fn ->
+        Code.compile_string("defmodule OldMode do\n  use MjmlEEx, mode: :compile\nend")
+      end
+
+      assert_raise ArgumentError, ~r/unknown keys \[:templat\]/, fn ->
+        Code.compile_string("defmodule Typo do\n  use MjmlEEx, templat: \"a.meex\"\nend")
       end
     end
 

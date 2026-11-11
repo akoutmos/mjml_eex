@@ -113,6 +113,7 @@ defmodule MjmlEEx do
   @template_extension ".meex"
 
   defmacro __using__(opts) do
+    __reject_removed_options__(opts)
     opts = Keyword.validate!(opts, [:template, :compiler_opts, :validation, :layout])
 
     {template, explicit?} =
@@ -157,6 +158,26 @@ defmodule MjmlEEx do
       end
 
       defoverridable to_html: 1, to_text: 1
+    end
+  end
+
+  @doc false
+  # Options of 0.x that 1.0 removed, with what to do instead
+  @spec __reject_removed_options__(keyword()) :: :ok
+  def __reject_removed_options__(opts) do
+    cond do
+      Keyword.has_key?(opts, :mjml_template) ->
+        raise ArgumentError,
+              "the :mjml_template option is now :template, and template files use the .meex extension " <>
+                "instead of .mjml.eex. See the Migrating from 0.x guide"
+
+      Keyword.has_key?(opts, :mode) ->
+        raise ArgumentError,
+              "the :mode option was removed: templates always compile their MJML when they're rendered, " <>
+                "so remove it. See the Migrating from 0.x guide"
+
+      true ->
+        :ok
     end
   end
 

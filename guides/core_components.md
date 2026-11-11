@@ -194,7 +194,14 @@ MyApp.Emails.Welcome.to_html(assigns)
 ```
 
 Like `Gettext.put_locale/1`, it only affects the process that calls it, and lasts until it's changed or cleared with
-`MjmlEEx.Theme.put(nil)`.
+`MjmlEEx.Theme.put(nil)`. In a process that renders emails for several brands, such as a job worker, use
+`MjmlEEx.Theme.with_theme/2`, which only sets the theme while it renders:
+
+```elixir
+MjmlEEx.Theme.with_theme([primary: account.brand_color], fn ->
+  MyApp.Emails.Welcome.to_html(assigns)
+end)
+```
 
 `put/1` raises for an invalid value, so check values that your users set with `MjmlEEx.Theme.validate/1` when
 they're saved, rather than finding out when an email is sent:
@@ -260,7 +267,8 @@ The components follow MJML, so they work in the same email clients. A few things
   Windows.
 - A hero's background image shows in most clients, including Outlook. Where it doesn't, the hero's color does.
 - Accordions only open and close in clients that support it, such as Apple Mail. Other clients show every item's
-  text.
+  text. Their icons are MJML's, which are hosted on imgur.com, and imgur isn't available everywhere (it blocks the UK).
+  Host your own and set them with `<.accordion icon-wrapped-url="..." icon-unwrapped-url="...">`.
 - The theme's link color for plain `a` tags is set with a `<style>` block, which a few clients remove. Links made with
   `link/1` have their color inline, so they're the same everywhere.
 - Social icons are images hosted by Mailjet, like MJML's. To host them yourself, set the `:social_icon_path` compiler

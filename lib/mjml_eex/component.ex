@@ -88,6 +88,7 @@ defmodule MjmlEEx.Component do
         }
 
   defmacro __using__(opts) do
+    MjmlEEx.__reject_removed_options__(opts)
     opts = Keyword.validate!(opts, [:validation])
     # Fail early on invalid settings
     _ = MjmlEEx.Validator.levels(opts[:validation])

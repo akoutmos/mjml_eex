@@ -1385,9 +1385,14 @@ defmodule MjmlEEx.CoreComponents do
 
   Email clients that can't expand accordions show every item's text.
 
+  The expand and collapse icons are MJML's, which are images hosted on imgur.com. Imgur isn't
+  available everywhere (it blocks the UK, for example), so for emails to all your users, host
+  your own icons and set them with `icon-wrapped-url` and `icon-unwrapped-url`.
+
   ## Attributes
 
-  Attributes are passed to the `mj-accordion`, such as `border` or `padding`.
+  Attributes are passed to the `mj-accordion`, such as `border`, `padding`, or the icons'
+  `icon-wrapped-url` and `icon-unwrapped-url`.
 
   ## Slots
 

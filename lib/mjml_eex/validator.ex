@@ -375,6 +375,7 @@ defmodule MjmlEEx.Validator do
       acc
       |> check_attributes("mjml", attrs, Map.keys(allowed) ++ mjml_eex_attributes("mjml"), ctx)
       |> check_types("mjml", attrs, allowed, ctx)
+      |> check_unsupported_values("mjml", attrs, ctx)
       |> check_single_children(node, ctx)
 
     validate_children(element_children(node), child_ctx(ctx, "mjml", meta), acc)

@@ -232,8 +232,8 @@ defmodule MjmlEEx.ComponentTest do
 
              To allow them, set their rules to :warn or :skip, for the whole app or for one module:
 
-                 config :mjml_eex, validation: [component_attribute: :warn]
-                 use MjmlEEx, validation: [component_attribute: :warn]
+                 config :mjml_eex, validation: [unknown_attribute: :warn, invalid_value: :warn]
+                 use MjmlEEx, validation: [unknown_attribute: :warn, invalid_value: :warn]
              """
 
       assert_raise CompileError, ~r/missing required attribute href for <Components.cta>/, fn ->
@@ -287,9 +287,26 @@ defmodule MjmlEEx.ComponentTest do
       assert [{_module, _}] =
                compile_call(
                  Lenient,
-                 ~S|<Components.cta colour="red">Go</Components.cta>|,
+                 ~S|<Components.head_block colour="red" />|,
                  ", validation: [component_attribute: :skip]"
                )
+
+      # Attributes passed to the MJML tag of a :global attribute are checked with the rules for
+      # MJML attributes
+      assert [{_module, _}] =
+               compile_call(
+                 LenientGlobal,
+                 ~S|<Components.cta href="/" colour="red" padding-top="9">Go</Components.cta>|,
+                 ", validation: [unknown_attribute: :skip, invalid_value: :skip]"
+               )
+
+      assert_raise CompileError, ~r/unknown attribute colour for <Components.cta>/, fn ->
+        compile_call(
+          StrictGlobal,
+          ~S|<Components.cta href="/" colour="red">Go</Components.cta>|,
+          ", validation: [component_attribute: :skip]"
+        )
+      end
     end
 
     test "calls to components defined later in the module are checked after the module compiles" do

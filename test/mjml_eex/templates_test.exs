@@ -605,7 +605,7 @@ defmodule MjmlEEx.TemplatesTest do
     test "greets the user on a hero and lists the first steps" do
       mjml = render(Welcome)
 
-      assert mjml =~ ~s(<mj-section background-color="#4F46E5")
+      assert mjml =~ ~s(<mj-section css-class="mjml-eex-hero-primary" background-color="#4F46E5")
       assert mjml =~ ~r/Welcome to Acme, Jane!\s*<\/h1>/
       assert mjml =~ "Go to your dashboard</mj-button>"
       assert mjml =~ ~r/Create a project<\/div>.*Projects hold your work.*Create one &rarr;<\/a>/s

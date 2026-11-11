@@ -36,7 +36,8 @@ defmodule MjmlEEx.Theme do
     * `:subtle` - quiet fills inside cards: secondary buttons and codes. Defaults to `"#F4F4F5"`.
     * `:text` - body text. Defaults to `"#3F3F46"`.
     * `:heading` - headings and emphasized text. Defaults to `"#18181B"`.
-    * `:muted` - secondary text, such as table headers and footers. Defaults to `"#71717A"`.
+    * `:muted` - secondary text, such as table headers and footers. Defaults to `"#6B6B74"`,
+      which has enough contrast on `:background` for small text (WCAG AA).
     * `:border` - dividers and table rules. Defaults to `"#E4E4E7"`.
     * `:info`, `:success`, `:warning` and `:danger` - the titles of callouts, and the danger
       button. Default to `"#1D4ED8"`, `"#15803D"`, `"#B45309"` and `"#B91C1C"`.
@@ -74,7 +75,7 @@ defmodule MjmlEEx.Theme do
             subtle: "#F4F4F5",
             text: "#3F3F46",
             heading: "#18181B",
-            muted: "#71717A",
+            muted: "#6B6B74",
             border: "#E4E4E7",
             info: "#1D4ED8",
             info_background: "#EFF6FF",

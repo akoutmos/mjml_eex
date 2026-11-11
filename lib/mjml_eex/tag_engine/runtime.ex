@@ -5,10 +5,12 @@ defmodule MjmlEEx.TagEngine.Runtime do
 
   alias MjmlEEx.Rendered
   alias MjmlEEx.TagEngine.Tags
+  alias MjmlEEx.ValidationError
   alias MjmlEEx.Validator
   alias Phoenix.HTML.Safe
 
-  @type location :: {String.t(), pos_integer(), pos_integer()}
+  # Where an attribute is, and the template's levels for the rules runtime validation checks
+  @type location :: {String.t(), pos_integer(), pos_integer(), %{atom() => :error | :warn | :skip}}
 
   # Attribute rendering for compiled templates.
   #
@@ -63,26 +65,53 @@ defmodule MjmlEEx.TagEngine.Runtime do
   defp unwrap_rendered(%Rendered{mjml: mjml}), do: {:safe, mjml}
   defp unwrap_rendered(other), do: other
 
-  # With `config :mjml_eex, runtime_validation: :raise` (or `true`) or `:warn`, the values of
-  # MJML attributes that come from expressions are checked as they're rendered
-  defp maybe_validate(tag, attributes, {file, line, column}) do
-    case Application.get_env(:mjml_eex, :runtime_validation, false) do
-      false ->
+  @doc false
+  # The rules that runtime validation checks. Templates pass their levels for them.
+  @spec validated_rules() :: [atom()]
+  def validated_rules, do: [:unknown_attribute, :invalid_value]
+
+  # With `config :mjml_eex, runtime_validation: :raise` or `:warn`, the values of MJML
+  # attributes that come from expressions are checked as they're rendered. A problem is
+  # reported at the lower of that setting and the template's level for its rule, so a rule the
+  # template sets to :warn only warns, and one set to :skip isn't checked.
+  defp maybe_validate(tag, attributes, {file, line, column, levels}) do
+    case runtime_validation() do
+      :skip ->
         :ok
 
       mode ->
         for {name, value} <- attributes, value not in [nil, false] do
-          case Validator.check_attribute(tag, name, value_to_string(value)) do
-            nil ->
-              :ok
-
-            error ->
-              error = %{error | file: file, line: line, column: column}
-              if mode == :warn, do: Logger.warning(Exception.message(error)), else: raise(error)
+          with %ValidationError{rule: rule} = error <- Validator.check_attribute(tag, name, value_to_string(value)) do
+            report(%{error | file: file, line: line, column: column}, lower(mode, Map.get(levels, rule, :error)))
           end
         end
 
         :ok
+    end
+  end
+
+  defp report(_error, :skip), do: :ok
+  defp report(error, :warn), do: Logger.warning(Exception.message(%{error | severity: :warn}))
+  defp report(error, :error), do: raise(error)
+
+  defp lower(_mode, :skip), do: :skip
+  defp lower(:warn, _level), do: :warn
+  defp lower(_mode, level), do: level
+
+  defp runtime_validation do
+    case Application.get_env(:mjml_eex, :runtime_validation, false) do
+      off when off in [false, nil, :skip] ->
+        :skip
+
+      :warn ->
+        :warn
+
+      on when on in [true, :raise, :error] ->
+        :error
+
+      other ->
+        raise ArgumentError,
+              "invalid config :mjml_eex, runtime_validation: #{inspect(other)}. Expected :raise, :warn or false"
     end
   end
 

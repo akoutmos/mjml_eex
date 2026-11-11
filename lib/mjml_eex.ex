@@ -85,7 +85,8 @@ defmodule MjmlEEx do
 
   Attribute values that come from expressions (`color={@color}`) can only be checked when the
   template is rendered. Turn that on in dev and test with
-  `config :mjml_eex, runtime_validation: :raise` (or `:warn` to log instead).
+  `config :mjml_eex, runtime_validation: :raise` (or `:warn` to log instead). It follows the
+  template's levels for the `unknown_attribute` and `invalid_value` rules.
 
   ## Options
 
@@ -159,11 +160,14 @@ defmodule MjmlEEx do
     end
   end
 
+  # The layout is expanded as if inside a function, so the template module only depends on
+  # it at runtime. Otherwise, any change to the layout or to the modules it calls would
+  # recompile every email that uses it. The layout's source is tracked with @external_resource
+  # instead, so that emails are validated again when it changes.
   defp expand_layout(nil, _caller), do: nil
+  defp expand_layout(layout, caller), do: do_expand_layout(layout, %{caller | function: {:__mjml_eex_layout__, 0}})
 
-  defp expand_layout({:{}, _, _} = layout, caller), do: layout |> Macro.expand(caller) |> expand_layout(caller)
-
-  defp expand_layout({module, fun}, caller) when is_atom(fun) do
+  defp do_expand_layout({module, fun}, caller) when is_atom(fun) do
     case Macro.expand(module, caller) do
       module when is_atom(module) ->
         {module, fun}
@@ -174,7 +178,7 @@ defmodule MjmlEEx do
     end
   end
 
-  defp expand_layout(module, caller) do
+  defp do_expand_layout(module, caller) do
     case Macro.expand(module, caller) do
       module when is_atom(module) ->
         {module, :render}
@@ -224,7 +228,8 @@ defmodule MjmlEEx do
             file: template,
             line: 1,
             validation: validation,
-            caller: env,
+            # The template is render/1's body, so the modules it calls are runtime dependencies
+            caller: %{env | function: {:render, 1}},
             layout: layout_source(env.module, env)
           )
 

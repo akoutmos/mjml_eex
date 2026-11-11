@@ -156,6 +156,8 @@ defmodule MjmlEEx.CoreComponents do
     </mj-attributes>
     <mj-style>
       a { color: <%= @theme.primary %>; }
+      .mjml-eex-hero-primary a { color: <%= @theme.primary_text %>; text-decoration: underline; }
+      .mjml-eex-hero-dark a { color: <%= @theme.surface %>; text-decoration: underline; }
     </mj-style>
     """
   end
@@ -179,7 +181,7 @@ defmodule MjmlEEx.CoreComponents do
   ## Attributes
 
     * `logo` - the URL of the logo image.
-    * `logo_alt` - the logo's alternative text.
+    * `logo_alt` - the logo's alternative text. Defaults to `title`.
     * `logo_width` - the width of the logo. Defaults to `"120px"`.
     * `title` - text to show when there's no logo.
     * `href` - the URL the logo or title links to.
@@ -240,7 +242,7 @@ defmodule MjmlEEx.CoreComponents do
     <mj-image
       :if={@logo}
       src={@logo}
-      alt={@logo_alt}
+      alt={@logo_alt || @title}
       width={@logo_width}
       href={@href}
       align={@brand_align}
@@ -326,7 +328,8 @@ defmodule MjmlEEx.CoreComponents do
 
   Its content is styled for its background: on `"primary"` and `"dark"` heroes, the
   components inside use a version of the theme with light text, so headings, text, links,
-  badges and codes are readable, and buttons are light with dark text.
+  badges and codes are readable, and buttons are light with dark text. Plain `<a>` links in
+  its text are styled to match by the theme's `<style>` (in `email/1`, or `theme/1`).
 
   Like cards, consecutive heroes and cards have a gap between them.
 
@@ -364,9 +367,17 @@ defmodule MjmlEEx.CoreComponents do
 
     image = assigns.background_image
 
+    # The theme's <style> (see theme/1) colors plain <a> links in primary and dark heroes
+    # with the hero's foreground color, rather than the primary color
+    css_class =
+      [if(assigns.variant != "surface", do: "mjml-eex-hero-#{assigns.variant}"), assigns.rest[:"css-class"]]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(" ")
+
     section =
       merge_attrs(
         [
+          "css-class": if(css_class != "", do: css_class),
           "background-color": background,
           "background-url": image,
           "background-size": if(image, do: "cover"),
@@ -375,7 +386,7 @@ defmodule MjmlEEx.CoreComponents do
           "border-radius": theme.radius,
           padding: "40px 0"
         ],
-        assigns.rest
+        Map.delete(assigns.rest, :"css-class")
       )
 
     assigns =

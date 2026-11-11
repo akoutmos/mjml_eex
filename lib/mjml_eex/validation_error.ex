@@ -38,7 +38,9 @@ defmodule MjmlEEx.ValidationError do
   - `:unknown_class` - an `mj-class` that isn't defined in `mj-attributes`.
   - `:empty_title` - an empty `mj-title`.
   - `:component_attribute` - a function component call with an unknown or missing attribute,
-    or a literal value that doesn't match the attribute's type or `:values`.
+    or a literal value that doesn't match the attribute's type or `:values`. Attributes passed
+    through a `:global` attribute for an MJML tag (`for: "mj-button"`) are checked with that
+    tag's rules instead: `:unknown_attribute` and `:invalid_value`.
   - `:component_slot` - a function component call with an undefined or missing slot.
 
   `:root`, `:unsupported_tag`, `:ending_tag`, `:unexpected_text`, `:duplicate_attribute`,

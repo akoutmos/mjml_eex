@@ -71,7 +71,8 @@ defmodule MjmlEEx.ValidatorTest do
     "invalid_value_integer" => [{:invalid_value, 5, 19, "mj-table", "cellpadding"}],
     "invalid_value_in_attributes_child" => [{:invalid_value, 4, 16, "mj-text", "align"}],
     "invalid_value_mj_include_type" => [{:invalid_value, 3, 36, "mj-include", "type"}],
-    "invalid_value_root_owa" => [{:invalid_value, 1, 7, "mjml", "owa"}],
+    # mjml_nif ignores owa, whatever its value
+    "invalid_value_root_owa" => [{:unsupported_value, 1, 7, "mjml", "owa"}, {:invalid_value, 1, 7, "mjml", "owa"}],
     "unsupported_value_inline_style" => [{:unsupported_value, 3, 15, "mj-style", "inline"}],
     "unknown_class" => [{:unknown_class, 10, 18, "mj-text", "mj-class"}],
     "empty_title" => [{:empty_title, 3, 5, "mj-title", nil}],
@@ -300,7 +301,28 @@ defmodule MjmlEEx.ValidatorTest do
       {@in_column, String.replace(@accordion, "~s", "<mj-accordion-title~a>t</mj-accordion-title>"),
        ~s(font-weight="bold")},
       {"<mjml><mj-body>~s</mj-body></mjml>",
-       ~s(<mj-hero background-url="a.png" height="300px"~a><mj-text>x</mj-text></mj-hero>), ~s(mode="fluid-height")}
+       ~s(<mj-hero background-url="a.png" height="300px"~a><mj-text>x</mj-text></mj-hero>), ~s(mode="fluid-height")},
+      {"~s",
+       "<mjml~a><mj-body><mj-section><mj-column><mj-text>a</mj-text></mj-column><mj-column><mj-text>b</mj-text></mj-column></mj-section></mj-body></mjml>",
+       ~s(owa="desktop")},
+      {"<mjml><mj-body>~s</mj-body></mjml>",
+       "<mj-raw~a><p>x</p></mj-raw><mj-section><mj-column><mj-text>x</mj-text></mj-column></mj-section>",
+       ~s(position="file-start")},
+      {"<mjml><mj-body>~s</mj-body></mjml>",
+       ~s(<mj-section background-url="https://example.com/a.png"~a><mj-column><mj-text>x</mj-text></mj-column></mj-section>),
+       ~s(text-padding="37px")},
+      {"<mjml><mj-body>~s</mj-body></mjml>",
+       ~s(<mj-wrapper~a><mj-section><mj-column><mj-text>a</mj-text></mj-column></mj-section><mj-section><mj-column><mj-text>b</mj-text></mj-column></mj-section></mj-wrapper>),
+       ~s(gutter="20px")},
+      {"<mjml><mj-body>~s</mj-body></mjml>",
+       ~s(<mj-wrapper background-url="https://example.com/a.png" full-width="full-width"~a><mj-section><mj-column><mj-text>x</mj-text></mj-column></mj-section></mj-wrapper>),
+       ~s(text-padding="37px")},
+      {@in_column, ~s(<mj-social~a><mj-social-element name="github" href="/">g</mj-social-element></mj-social>),
+       ~s(table-layout="fixed")},
+      {@in_column, "<mj-spacer~a />", ~s(border="2px solid red")},
+      {@in_column, "<mj-spacer~a />", ~s(border-top="2px solid red")},
+      {@in_column, ~s(<mj-table font-size="20px"~a><tr><td>a</td></tr></mj-table>), ~s(font-weight="700")},
+      {@in_column, "<mj-text~a>x</mj-text>", ~s(background-color="red")}
     ]
 
     for {wrapper, element, attribute} <- @ignored do

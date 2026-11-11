@@ -9,14 +9,14 @@ defmodule MjmlEEx.EngineTest do
     on_exit(fn -> Application.delete_env(:mjml_eex, :runtime_validation) end)
   end
 
-  defp compile(body, file \\ "email.ex") do
+  defp compile(body, file \\ "email.ex", validation \\ :skip) do
     name = Module.concat(__MODULE__, "T#{System.unique_integer([:positive])}")
 
     [{module, _binary}] =
       Code.compile_string(
         """
         defmodule #{inspect(name)} do
-          use MjmlEEx, validation: :skip
+          use MjmlEEx, validation: #{inspect(validation)}
           #{body}
         end
         """,
@@ -26,14 +26,18 @@ defmodule MjmlEEx.EngineTest do
     module
   end
 
-  defp sigil(template) do
-    compile("""
-    def render(assigns) do
-      ~MJML\"\"\"
-      #{String.replace(template, "\n", "\n  ")}
-      \"\"\"
-    end
-    """)
+  defp sigil(template, validation \\ :skip) do
+    compile(
+      """
+      def render(assigns) do
+        ~MJML\"\"\"
+        #{String.replace(template, "\n", "\n  ")}
+        \"\"\"
+      end
+      """,
+      "email.ex",
+      validation
+    )
   end
 
   defp render(module, assigns), do: assigns |> module.render() |> MjmlEEx.to_mjml()
@@ -56,6 +60,20 @@ defmodule MjmlEEx.EngineTest do
 
       assert render(module, order_id: 42) =~ "<mj-text>Order 42</mj-text>"
       assert render(module, order_id: 42) =~ "Hi {{first_name}},<br>welcome"
+    end
+
+    test "on a raw text tag only applies to that tag, whatever the order of the attributes" do
+      for attrs <- ["mjml-no-curly-interpolation mjml-raw-text", "mjml-raw-text mjml-no-curly-interpolation"] do
+        module =
+          sigil("""
+          <mj-raw #{attrs}><p>{{x}}</p></mj-raw>
+          <mj-text>Order {@order_id}</mj-text>
+          """)
+
+        mjml = render(module, order_id: 42)
+        assert mjml =~ "<mj-text>Order 42</mj-text>", "with #{attrs}"
+        assert mjml =~ "<p>{{x}}</p>", "with #{attrs}"
+      end
     end
 
     test "on a self-closing or void tag only applies to that tag" do
@@ -138,7 +156,7 @@ defmodule MjmlEEx.EngineTest do
   describe "attributes" do
     test "runtime validation accepts raw/1 values" do
       Application.put_env(:mjml_eex, :runtime_validation, :raise)
-      module = sigil(~S|<mj-button href={raw(@url)} color={raw("nope!")}>Go</mj-button>|)
+      module = sigil(~S|<mj-button href={raw(@url)} color={raw("nope!")}>Go</mj-button>|, [])
 
       assert_raise MjmlEEx.ValidationError, ~r/Attribute color has invalid value: nope!/, fn ->
         render(module, url: "https://example.com/?a=1&b=2")
@@ -253,9 +271,46 @@ defmodule MjmlEEx.EngineTest do
     end
   end
 
-  test "runtime validation logs with :warn" do
-    Application.put_env(:mjml_eex, :runtime_validation, :warn)
-    module = sigil(~S|<mj-button color={@c}>Go</mj-button>|)
-    assert capture_log(fn -> render(module, c: "nope!") end) =~ "Attribute color has invalid value: nope!"
+  describe "runtime validation" do
+    test "logs with :warn" do
+      Application.put_env(:mjml_eex, :runtime_validation, :warn)
+      module = sigil(~S|<mj-button color={@c}>Go</mj-button>|, [])
+      assert capture_log(fn -> render(module, c: "nope!") end) =~ "Attribute color has invalid value: nope!"
+    end
+
+    test "is off with false, nil and :skip, and raises for other unknown settings" do
+      module = sigil(~S|<mj-button color={@c}>Go</mj-button>|, [])
+
+      for off <- [false, nil, :skip] do
+        Application.put_env(:mjml_eex, :runtime_validation, off)
+        assert render(module, c: "nope!") =~ ~s(color="nope!")
+      end
+
+      for on <- [true, :raise, :error] do
+        Application.put_env(:mjml_eex, :runtime_validation, on)
+        assert_raise MjmlEEx.ValidationError, fn -> render(module, c: "nope!") end
+      end
+
+      Application.put_env(:mjml_eex, :runtime_validation, :off)
+
+      assert_raise ArgumentError, ~r/invalid config :mjml_eex, runtime_validation: :off/, fn ->
+        render(module, c: "nope!")
+      end
+    end
+
+    test "follows the template's levels for its rules" do
+      Application.put_env(:mjml_eex, :runtime_validation, :raise)
+      template = ~S|<mj-button color={@c} {@attrs}>Go</mj-button>|
+
+      skipped = sigil(template, invalid_value: :skip, unknown_attribute: :skip)
+      assert render(skipped, c: "nope!", attrs: [data_x: "1"]) =~ ~s(color="nope!")
+
+      warned = sigil(template, invalid_value: :warn)
+      assert capture_log(fn -> render(warned, c: "nope!", attrs: []) end) =~ "Attribute color has invalid value: nope!"
+
+      assert_raise MjmlEEx.ValidationError, ~r/Attribute data_x is illegal/, fn ->
+        render(warned, c: "red", attrs: [data_x: "1"])
+      end
+    end
   end
 end

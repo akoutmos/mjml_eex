@@ -159,8 +159,11 @@ defmodule MjmlEEx.Component.Calls do
     string_name = to_string(name)
 
     cond do
+      # With a :global for an MJML tag, the attribute would be passed to that tag, so it's
+      # reported with the rule for MJML attributes
       string_name not in allowed ->
-        [unknown_attr(call, name, allowed ++ Enum.map(declared, &to_string(&1.name)), line, column)]
+        rule = if global.for, do: :unknown_attribute, else: :component_attribute
+        [unknown_attr(call, name, allowed ++ Enum.map(declared, &to_string(&1.name)), line, column, rule)]
 
       # Names given with include: are the component's choice, whatever the for: tag accepts
       string_name in Enum.map(global.include, &to_string/1) ->
@@ -195,17 +198,12 @@ defmodule MjmlEEx.Component.Calls do
         []
 
       error ->
-        [
-          problem(call, :component_attribute, line, column,
-            attribute: name,
-            message: "#{error.message} (for #{call.display})"
-          )
-        ]
+        [problem(call, error.rule, line, column, attribute: name, message: "#{error.message} (for #{call.display})")]
     end
   end
 
-  defp unknown_attr(call, name, candidates, line, column) do
-    problem(call, :component_attribute, line, column,
+  defp unknown_attr(call, name, candidates, line, column, rule \\ :component_attribute) do
+    problem(call, rule, line, column,
       attribute: name,
       message: "unknown attribute #{name} for #{call.display}",
       hint: Validator.suggestion(to_string(name), candidates)

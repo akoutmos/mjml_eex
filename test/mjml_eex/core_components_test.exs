@@ -88,6 +88,12 @@ defmodule MjmlEEx.CoreComponentsTest do
       refute mjml =~ "mj-navbar"
     end
 
+    test "uses the title as the logo's alternative text, unless logo_alt is given" do
+      assigns = %{}
+      mjml = in_body(~MJML|<.header logo="https://example.com/logo.png" title="Acme" />|)
+      assert mjml =~ ~s(<mj-image src="https://example.com/logo.png" alt="Acme")
+    end
+
     test "renders a title, linked when there's an href" do
       assigns = %{}
       mjml = in_body(~MJML|<.header title="Acme" align="left" />|)
@@ -148,8 +154,8 @@ defmodule MjmlEEx.CoreComponentsTest do
         </.footer>
         """)
 
-      assert mjml =~ ~r/<mj-text align="center" color="#71717A"[^>]*>\s*Acme Inc.\s*<\/mj-text>/
-      assert mjml =~ ~s(<a href="https://example.com/unsubscribe" style="color:#71717A;text-decoration:underline;">)
+      assert mjml =~ ~r/<mj-text align="center" color="#6B6B74"[^>]*>\s*Acme Inc.\s*<\/mj-text>/
+      assert mjml =~ ~s(<a href="https://example.com/unsubscribe" style="color:#6B6B74;text-decoration:underline;">)
       assert mjml =~ "&nbsp;&middot;&nbsp;"
       assert mjml =~ ~s(<mj-social-element name="github" href="https://github.com/acme")
       assert mjml =~ ~s(padding="0 25px 12px")
@@ -213,10 +219,10 @@ defmodule MjmlEEx.CoreComponentsTest do
                ~s(<mj-text color="#3F3F46" font-size="18px" line-height="28px">Lead</mj-text>)
 
       assert in_column(~MJML|<.text variant="muted">Muted</.text>|) =~
-               ~s(<mj-text color="#71717A" font-size="16px" line-height="24px">Muted</mj-text>)
+               ~s(<mj-text color="#6B6B74" font-size="16px" line-height="24px">Muted</mj-text>)
 
       assert in_column(~MJML|<.text variant="small" align="center">Small</.text>|) =~
-               ~s(<mj-text color="#71717A" font-size="14px" line-height="20px" align="center">Small</mj-text>)
+               ~s(<mj-text color="#6B6B74" font-size="14px" line-height="20px" align="center">Small</mj-text>)
     end
 
     test "keeps HTML in the content" do
@@ -407,7 +413,7 @@ defmodule MjmlEEx.CoreComponentsTest do
         """)
 
       assert mjml =~
-               ~s(<td style="padding:6px 16px 6px 0;color:#71717A;vertical-align:top;">Subtotal</td>)
+               ~s(<td style="padding:6px 16px 6px 0;color:#6B6B74;vertical-align:top;">Subtotal</td>)
 
       assert mjml =~
                ~s(<td align="right" style="padding:6px 0;color:#18181B;text-align:right;vertical-align:top;">$40.00</td>)
@@ -466,7 +472,7 @@ defmodule MjmlEEx.CoreComponentsTest do
         """)
 
       assert mjml =~
-               ~r/<mj-social-element name="github" href="https:\/\/github.com\/acme" alt="github" background-color="#71717A">\s*GitHub\s*<\/mj-social-element>/
+               ~r/<mj-social-element name="github" href="https:\/\/github.com\/acme" alt="github" background-color="#6B6B74">\s*GitHub\s*<\/mj-social-element>/
 
       assert mjml =~ ~s(src="https://example.com/mastodon.png")
     end
@@ -511,13 +517,33 @@ defmodule MjmlEEx.CoreComponentsTest do
         </.hero>
         """)
 
-      assert mjml =~ ~s(<mj-section background-color="#4F46E5" border-radius="8px" padding="40px 0">)
+      assert mjml =~
+               ~s(<mj-section css-class="mjml-eex-hero-primary" background-color="#4F46E5" border-radius="8px" padding="40px 0">)
+
       assert mjml =~ ~s(<mj-section padding="0 0 16px" />)
       assert mjml =~ ~s(<h1 style="margin:0;color:#FFFFFF;)
       # Small text is a mix of the text and background colors
       assert mjml =~ ~s(<mj-text color="#DCDAFA" font-size="14px")
       # Buttons swap the colors
       assert mjml =~ ~s(<mj-button href="/go" align="left" background-color="#FFFFFF" color="#4F46E5")
+    end
+
+    test "styles plain links in its text with the hero's foreground color" do
+      assigns = %{}
+
+      mjml =
+        MjmlEEx.to_mjml(~MJML"""
+        <.email>
+          <.hero css-class="promo"><.text>Read <a href="/docs">the docs</a></.text></.hero>
+          <.hero variant="surface"><.text>Plain</.text></.hero>
+        </.email>
+        """)
+
+      assert mjml =~ ~s(<mj-section css-class="mjml-eex-hero-primary promo")
+      assert mjml =~ ".mjml-eex-hero-primary a { color: #FFFFFF; text-decoration: underline; }"
+      assert mjml =~ ".mjml-eex-hero-dark a { color: #FFFFFF; text-decoration: underline; }"
+      refute mjml =~ "mjml-eex-hero-surface"
+      assert MjmlEEx.to_html(mjml) =~ ~s(class="mjml-eex-hero-primary promo")
     end
 
     test "renders a dark hero with a background image" do
@@ -531,7 +557,7 @@ defmodule MjmlEEx.CoreComponentsTest do
         """)
 
       assert mjml =~
-               ~s(<mj-section background-color="#18181B" background-url="https://acme.com/sale.png" background-size="cover" background-repeat="no-repeat" background-position="center center" border-radius="8px" padding="56px 0">)
+               ~s(<mj-section css-class="mjml-eex-hero-dark" background-color="#18181B" background-url="https://acme.com/sale.png" background-size="cover" background-repeat="no-repeat" background-position="center center" border-radius="8px" padding="56px 0">)
 
       assert mjml =~ ~s(<h1 style="margin:0;color:#FFFFFF;)
     end
@@ -683,7 +709,7 @@ defmodule MjmlEEx.CoreComponentsTest do
         """)
 
       assert mjml =~
-               ~r/>1<\/div>.*Create a project<\/div>\s*<div style="color:#71717A;">Projects hold your work.<\/div>.*>2<\/div>/s
+               ~r/>1<\/div>.*Create a project<\/div>\s*<div style="color:#6B6B74;">Projects hold your work.<\/div>.*>2<\/div>/s
 
       assert mjml =~ "Invite your team</div>"
     end

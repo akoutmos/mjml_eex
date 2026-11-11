@@ -33,6 +33,8 @@ defmodule MjmlEEx.TagEngine.Compiler do
     nodes = Parser.parse!(source, parser_opts)
     {nodes, included_files} = Includes.expand(nodes, file)
     track_files(included_files, opts[:caller])
+    # Templates are validated with their layouts, so they're compiled again when one changes
+    track_files(opts |> Keyword.get(:layout) |> List.wrap() |> Enum.map(& &1.file), opts[:caller])
     validate!(nodes, file, Keyword.get(opts, :validation), Keyword.get(opts, :layout), opts[:caller])
 
     state = %{
@@ -143,7 +145,8 @@ defmodule MjmlEEx.TagEngine.Compiler do
       )
 
     # Includes in the layout are part of it
-    {layout_nodes, _files} = Includes.expand(layout_nodes, layout.file)
+    {layout_nodes, included_files} = Includes.expand(layout_nodes, layout.file)
+    track_files(included_files, caller)
 
     case replace_inner_content(Includes.mark_file(layout_nodes, {:layout, layout.file}), nodes) do
       {composed, true} ->
@@ -215,14 +218,14 @@ defmodule MjmlEEx.TagEngine.Compiler do
   defp handle_node({:eex_comment, _text, _meta}, substate, _state), do: substate
 
   ## {...} interpolation
-  defp handle_node({:body_expr, expr, %{line: line, column: column} = meta}, substate, state) do
-    ast = Code.string_to_quoted!(expr, line: line, column: column, file: file(meta, state))
+  defp handle_node({:body_expr, expr, meta}, substate, state) do
+    ast = quoted!(expr, meta, state)
     @engine.handle_expr(substate, "=", to_safe(ast))
   end
 
   ## <%= ... %> and <% ... %>
-  defp handle_node({:eex, expr, %{opt: opt, line: line, column: column} = meta}, substate, state) do
-    ast = Code.string_to_quoted!(expr, line: line, column: column, file: file(meta, state))
+  defp handle_node({:eex, expr, %{opt: opt} = meta}, substate, state) do
+    ast = quoted!(expr, meta, state)
     ast = if opt == ~c"=", do: to_safe(ast), else: ast
     @engine.handle_expr(substate, to_string(opt), ast)
   end
@@ -247,13 +250,7 @@ defmodule MjmlEEx.TagEngine.Compiler do
           end
       end)
 
-    block_ast =
-      Code.string_to_quoted!(combined_expr,
-        line: line,
-        column: column + 2 + length(opt),
-        columns: true,
-        file: file(meta, state)
-      )
+    block_ast = quoted!(combined_expr, meta, state, column: column + 2 + length(opt))
 
     @engine.handle_expr(substate, to_string(opt), insert_quoted(block_ast, quoted))
   end
@@ -674,10 +671,35 @@ defmodule MjmlEEx.TagEngine.Compiler do
 
   ## Helpers
 
-  defp location(%{line: line, column: column} = meta, state), do: Macro.escape({file(meta, state), line, column})
+  # Where a dynamic attribute is, and the template's levels for the rules that runtime
+  # validation checks
+  defp location(%{line: line, column: column} = meta, state) do
+    levels = Map.take(state.levels, Runtime.validated_rules())
+    Macro.escape({file(meta, state), line, column, levels})
+  end
 
-  defp parse_expr!({:expr, value, %{line: line, column: column} = meta}, state) do
-    Code.string_to_quoted!(value, line: line, column: column, file: file(meta, state))
+  defp parse_expr!({:expr, value, meta}, state), do: quoted!(value, meta, state)
+
+  # Parses an Elixir expression of the template. Expressions from included files carry their
+  # file in the AST (like `quote location: :keep`), so that compiler warnings and errors in them
+  # point to that file rather than to the template that includes it.
+  defp quoted!(expr, %{line: line, column: column} = meta, state, opts \\ []) do
+    file = file(meta, state)
+    ast = Code.string_to_quoted!(expr, Keyword.merge([line: line, column: column, columns: true, file: file], opts))
+    if file == state.file, do: ast, else: keep_file(ast, file)
+  end
+
+  defp keep_file(ast, file) do
+    Macro.prewalk(ast, fn
+      {form, meta, args} when is_list(meta) ->
+        case Keyword.fetch(meta, :line) do
+          {:ok, line} -> {form, Keyword.put(meta, :keep, {file, line}), args}
+          :error -> {form, meta, args}
+        end
+
+      other ->
+        other
+    end)
   end
 
   # Nodes from an included file carry that file

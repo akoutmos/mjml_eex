@@ -323,6 +323,16 @@ defmodule MjmlEEx.LayoutTest do
       end
     end
 
+    test "a :layout that isn't a module or {module, function} raises" do
+      assert_raise ArgumentError, ~r/the :layout option must be a module or \{module, function\}/, fn ->
+        compile("<mj-section />", "{MjmlEEx.LayoutTest.BaseLayout, :render, :oops}")
+      end
+
+      assert_raise ArgumentError, ~r/the :layout option must be a module or \{module, function\}/, fn ->
+        compile("<mj-section />", ~s("BaseLayout"))
+      end
+    end
+
     test "a layout must be an MJML EEx template that renders {@inner_content}" do
       assert_raise CompileError, ~r/the layout in test\/support\/components.ex doesn't render \{@inner_content\}/, fn ->
         compile("<mj-text>Hi</mj-text>", "{MjmlEEx.Test.Components, :data_row}")

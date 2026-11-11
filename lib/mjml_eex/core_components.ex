@@ -12,7 +12,7 @@ defmodule MjmlEEx.CoreComponents do
 
     def render(assigns) do
       ~MJML\"\"\"
-      <.email title="Welcome to Acme" preview="Your account is ready">
+      <.email title="Welcome to Acme" preview="Your account is ready" lang="en">
         <.header logo="https://acme.com/logo.png" logo_alt="Acme" />
         <.card>
           <.heading>Welcome, {@name}!</.heading>
@@ -45,13 +45,14 @@ defmodule MjmlEEx.CoreComponents do
   ## Changing the look
 
   Colors, fonts and sizes come from the theme. Change them for the whole app with
-  `config :mjml_eex, :theme, ...`, or for one render with `MjmlEEx.Theme.put/1`. See
-  `MjmlEEx.Theme` for every token.
+  `config :mjml_eex, :theme, ...`, for one email with `MjmlEEx.Theme.with_theme/2`, or for the
+  emails a process renders with `MjmlEEx.Theme.put/1`. See `MjmlEEx.Theme` for every token.
 
   To change one component, pass it MJML attributes: they're passed through to the MJML tag the
-  component renders, and take precedence over the theme's styles. A `button/1` renders an
-  `mj-button`, so `<.button href="/" font-size="18px" inner-padding="16px 32px">` works. Each
-  component's documentation says which tag it renders. Classes given with `mj-class` don't
+  component renders, and take precedence over the attributes the component sets on that tag
+  (not over the inline styles of the HTML inside it, such as a badge's pill). A `button/1`
+  renders an `mj-button`, so `<.button href="/" font-size="18px" inner-padding="16px 32px">`
+  works. Each component's documentation says which tag its attributes go to. Classes given with `mj-class` don't
   override the styles a component sets, since MJML gives attributes precedence over classes.
 
   To build your own components on top of these, wrap them in your own module:
@@ -81,7 +82,7 @@ defmodule MjmlEEx.CoreComponents do
   in the theme's background color and width.
 
   ```heex
-  <.email title="Your receipt" preview="Thanks for your order!">
+  <.email title="Your receipt" preview="Thanks for your order!" lang="en">
     <:head><mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter" /></:head>
     <.card>...</.card>
   </.email>
@@ -93,7 +94,9 @@ defmodule MjmlEEx.CoreComponents do
     * `preview` - the preview text that inboxes show after the subject (`mj-preview`).
     * Other attributes are passed to `mjml`. Set `lang` to the email's language, such as
       `lang="en"`, so that screen readers read it in the right voice (without it, the email
-      declares `lang="und"`, undetermined), and `dir="rtl"` for right-to-left languages.
+      declares `lang="und"`, undetermined), and `dir="rtl"` for right-to-left languages. `dir`
+      sets the direction of the text; the components are still laid out and aligned left to
+      right.
 
   ## Slots
 
@@ -142,7 +145,8 @@ defmodule MjmlEEx.CoreComponents do
   </mjml>
   ```
 
-  The other components don't need it: they're styled whether it's there or not.
+  The other components set their colors and sizes themselves, but they take the theme's font from
+  it: without it, their text is in MJML's default font.
   """
   @spec theme(map()) :: MjmlEEx.Rendered.t()
   def theme(assigns) do
@@ -181,7 +185,8 @@ defmodule MjmlEEx.CoreComponents do
   ## Attributes
 
     * `logo` - the URL of the logo image.
-    * `logo_alt` - the logo's alternative text. Defaults to `title`.
+    * `logo_alt` - the logo's alternative text. Defaults to `title`. A logo needs one or the
+      other.
     * `logo_width` - the width of the logo. Defaults to `"120px"`.
     * `title` - text to show when there's no logo.
     * `href` - the URL the logo or title links to.
@@ -206,6 +211,15 @@ defmodule MjmlEEx.CoreComponents do
   end
 
   def header(assigns) do
+    if assigns.logo && !(assigns.logo_alt || assigns.title) do
+      raise ArgumentError, "header/1 needs a logo_alt (or a title) for its logo, as the logo's alternative text"
+    end
+
+    # logo_width is the mj-image's width, which the call checks can't see through
+    with %{message: message} <- MjmlEEx.Validator.check_attribute("mj-image", "width", assigns.logo_width) do
+      raise ArgumentError, "header/1's logo_width: #{message}"
+    end
+
     theme = Theme.current()
     brand_align = if assigns.link == [], do: assigns.align, else: "left"
 
@@ -894,15 +908,13 @@ defmodule MjmlEEx.CoreComponents do
 
   ## Attributes
 
-    * `height` - defaults to `"24px"`.
-    * Other attributes are passed to the `mj-spacer`.
+  Attributes are passed to the `mj-spacer`, such as `height`, which defaults to `"24px"`.
   """
   @spec spacer(map()) :: MjmlEEx.Rendered.t()
-  attr :height, :string, default: "24px"
   attr :rest, :global, for: "mj-spacer"
 
   def spacer(assigns) do
-    assigns = assign(assigns, :attrs, merge_attrs([height: assigns.height], assigns.rest))
+    assigns = assign(assigns, :attrs, merge_attrs([height: "24px"], assigns.rest))
 
     ~MJML"""
     <mj-spacer {@attrs} />

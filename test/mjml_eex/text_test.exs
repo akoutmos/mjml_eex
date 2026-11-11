@@ -94,9 +94,31 @@ defmodule MjmlEEx.TextTest do
     assert text(~s(<div style="DISPLAY:none">Hidden</div><p>Shown</p>)) == "Shown\n"
   end
 
+  test "decodes all of HTML's named entities, and leaves out control characters" do
+    assert text("Caf&eacute; &uuml;ber &ntilde; &hearts; &iexcl;Hola! &NotEqualTilde; &frac12;") ==
+             "Café über ñ ♥ ¡Hola! ≂̸ ½\n"
+
+    assert text("a&#0;b&#7;c&#x80;d&#9;e") == "abcd e\n"
+  end
+
   test "decodes entities" do
     assert text("Tom &amp; Jerry&nbsp;&middot; &#8364;5 &#x2713; &lt;b&gt; &copy;&zwnj;&#847; &unknown;") ==
              "Tom & Jerry · €5 ✓ <b> © &unknown;\n"
+  end
+
+  test "keeps the text of HTML that MJML accepts but isn't well-formed" do
+    # A wrapper opened in one mj-raw and closed in another (with mjml-raw-text in templates)
+    assert MjmlEEx.to_text("""
+           <mjml><mj-body>
+             <mj-raw><div class="wrapper"></mj-raw>
+             <mj-section><mj-column><mj-text>Inside</mj-text></mj-column></mj-section>
+             <mj-raw></div></mj-raw>
+           </mj-body></mjml>
+           """) == "Inside\n"
+
+    # Unclosed tags, as in HTML from a CMS inserted with raw/1
+    assert text("<p>One<p>Two &amp; <b>three</b><style>p { color: red; }</style><!-- x -->") == "One Two & three\n"
+    assert to_text(~s(<mj-button href="/go"><b>Go</mj-button>)) == "Go: /go\n"
   end
 
   test "includes accordions and mj-raw" do
@@ -107,6 +129,27 @@ defmodule MjmlEEx.TextTest do
            </mj-accordion-element></mj-accordion>
            <mj-raw><p>Raw</p></mj-raw>
            """) == "Question\n\nAnswer\n\nRaw\n"
+  end
+
+  test "the generated to_text/1 works with the mjml-raw-text wrapper pattern" do
+    [{module, _binary}] =
+      Code.compile_string(~S'''
+      defmodule MjmlEEx.TextTest.Wrapper do
+        use MjmlEEx
+
+        def render(assigns) do
+          ~MJML"""
+          <mjml><mj-body>
+            <mj-raw mjml-raw-text><div class="wrapper"></mj-raw>
+            <mj-section><mj-column><mj-text>Hi {@name}</mj-text></mj-column></mj-section>
+            <mj-raw mjml-raw-text></div></mj-raw>
+          </mj-body></mjml>
+          """
+        end
+      end
+      ''')
+
+    assert module.to_text(name: "Jane") == "Hi Jane\n"
   end
 
   test "converts rendered templates" do

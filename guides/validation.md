@@ -91,8 +91,9 @@ end
 ```
 
 Templates are validated when they compile, so the `config :mjml_eex, validation: ...` setting belongs in
-`config/config.exs` (or another compile-time config file), not `config/runtime.exs`. After you change it, run
-`mix compile --force` to check your templates again.
+`config/config.exs` (or another compile-time config file), not `config/runtime.exs`: Elixir stops your app from
+starting if `config/runtime.exs` gives it a different value. When you change it, Mix compiles your emails and
+components again, so they're checked with the new setting.
 
 ## Values from expressions
 
@@ -107,8 +108,8 @@ config :mjml_eex, runtime_validation: :raise
 With `:raise`, rendering raises on an invalid value. With `:warn`, it logs a warning instead. It's off by default, or
 with `false`.
 
-It checks the `unknown_attribute` and `invalid_value` rules, at the template's levels for them: a rule set to `:warn`
-only logs, and one set to `:skip` isn't checked.
+It checks the `unknown_attribute`, `invalid_value` and `unsupported_value` rules, at the template's levels for them: a
+rule set to `:warn` only logs, and one set to `:skip` isn't checked.
 
 ## Validating MJML strings
 

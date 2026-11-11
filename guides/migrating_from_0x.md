@@ -57,6 +57,9 @@ html = MyApp.Emails.Welcome.to_html(first_name: "Alex")
 
 Tests that check the HTML of `render/1` need to call `to_html/1` too.
 
+When the MJML can't be compiled to HTML, `to_html/1` raises `MjmlEEx.CompileError`, with the compiler's `:reason` and
+the email's `:module`, instead of a `RuntimeError`. Update any `rescue RuntimeError` around rendering.
+
 `debug_mjml_template/0` is gone. To see the MJML an email renders, use
 `MyApp.Emails.Welcome.render(assigns) |> MjmlEEx.to_mjml()`.
 
@@ -77,11 +80,14 @@ A few things that 0.x passed through as text no longer compile, with an error th
 - EEx tags inside quoted attribute values. Change them to `attr={...}`.
 - HTML tags that aren't lowercase, such as `<TD>` or `<FONT>`, since capitalized tags are components. Write them in
   lowercase.
+- HTML tags that are never closed, such as `<p>one<p>two` or `<li>` without `</li>`, in `mj-text` and the other ending
+  tags. Close them. Void tags such as `<br>` and `<img>` are fine.
 - Attribute values without quotes, such as `<font size=2>`. Quote them.
 - `<![CDATA[...]]>` sections.
 - `<%%`, EEx's way of writing a literal `<%`. Write `&lt;%` instead.
 
-`<%# ... %>` comments still work, and `mix format` rewrites them as `<%!-- ... --%>`.
+`<%# ... %>` comments still compile, but with a deprecation warning from EEx (which fails builds with
+`--warnings-as-errors`). `mix format` rewrites them as `<%!-- ... --%>`.
 
 `{` now starts an expression in text, so a literal `{` outside `mj-style`, `style` and `script` needs to be written
 as `&#123;` or `<%= "{" %>`, or the tag marked with `mjml-no-curly-interpolation`. Values were HTML-escaped in 0.x too, so nothing changes there.

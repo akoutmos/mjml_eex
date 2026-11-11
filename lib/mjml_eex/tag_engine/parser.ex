@@ -141,7 +141,8 @@ defmodule MjmlEEx.TagEngine.Parser do
           indentation: indentation,
           trim_eex: trim_eex,
           strip_eex_comments: strip_eex_comments,
-          interpolation: interpolation
+          interpolation: interpolation,
+          raw_text_tags: Keyword.get(opts, :raw_text_tags, [])
         })
       )
 
@@ -151,11 +152,12 @@ defmodule MjmlEEx.TagEngine.Parser do
   defp do_tokenize({:text, text, meta}, {tokens, cont}, source, %{
          file: file,
          indentation: indentation,
-         interpolation: interpolation
+         interpolation: interpolation,
+         raw_text_tags: raw_text_tags
        }) do
     text = List.to_string(text)
     meta = [line: meta.line, column: meta.column]
-    state = Tokenizer.init(indentation, file, source, interpolation)
+    state = Tokenizer.init(indentation, file, source, interpolation, raw_text_tags)
     Tokenizer.tokenize(text, meta, tokens, cont, state)
   end
 

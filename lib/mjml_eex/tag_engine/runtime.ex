@@ -3,6 +3,7 @@ defmodule MjmlEEx.TagEngine.Runtime do
 
   require Logger
 
+  alias MjmlEEx.Component
   alias MjmlEEx.Rendered
   alias MjmlEEx.TagEngine.Tags
   alias MjmlEEx.ValidationError
@@ -10,7 +11,11 @@ defmodule MjmlEEx.TagEngine.Runtime do
   alias Phoenix.HTML.Safe
 
   # Where an attribute is, and the template's levels for the rules runtime validation checks
-  @type location :: {String.t(), pos_integer(), pos_integer(), %{atom() => :error | :warn | :skip}}
+  @type levels :: %{atom() => :error | :warn | :skip}
+
+  # Where an attribute is, the template's levels for the rules runtime validation checks, and
+  # whether the template is one of MJML EEx's own (see report_at/1)
+  @type location :: {String.t(), pos_integer(), pos_integer(), levels(), boolean()}
 
   # Attribute rendering for compiled templates.
   #
@@ -36,23 +41,30 @@ defmodule MjmlEEx.TagEngine.Runtime do
         |> Enum.map(fn {name, value} -> {name, mjml_value(value)} end)
 
       maybe_validate(tag, attributes, location)
-      attributes |> Enum.map(&unescaped_url(tag, &1)) |> Phoenix.HTML.attributes_escape()
+      attributes |> Enum.map(&css_url(tag, &1)) |> Phoenix.HTML.attributes_escape()
     else
       Phoenix.HTML.attributes_escape(attributes)
     end
   end
 
-  # mrml copies mj-font's href as is into a <link href="..."> and into a CSS `@import url(...)`
-  # in a <style> element, where entities aren't decoded, so it can't be HTML-escaped (a &
-  # escaped as &amp; would break the URL). Instead, the characters that could end the url(...),
-  # the attribute, the <style> element or the conditional comment around them are
-  # percent-encoded, which keeps the URL working.
-  defp unescaped_url("mj-font", {"href", value}) when is_binary(value),
-    do: {"href", {:safe, URI.encode(value, &font_url_char?/1)}}
+  # URLs that mrml copies into CSS. In them, the characters that could end the url(...), the
+  # attribute, the <style> element or the conditional comment around them are percent-encoded,
+  # which keeps the URL working.
+  #
+  # mj-font's href goes as is into a <link href="..."> and into a CSS `@import url(...)` in a
+  # <style> element, where entities aren't decoded, so it can't be HTML-escaped (a & escaped as
+  # &amp; would break the URL).
+  defp css_url("mj-font", {"href", value}) when is_binary(value),
+    do: {"href", {:safe, URI.encode(value, &url_char?/1)}}
 
-  defp unescaped_url(_tag, attribute), do: attribute
+  # A background-url goes into an inline style's url('...'), where the browser decodes
+  # entities first, so an HTML-escaped ' would still end the url('...'). It's HTML-escaped too.
+  defp css_url(tag, {"background-url", value}) when tag in ~w(mj-section mj-wrapper mj-hero) and is_binary(value),
+    do: {"background-url", URI.encode(value, &url_char?/1)}
 
-  defp font_url_char?(char), do: char > ?\s and char != 127 and char not in ~c[<>"'()\\{}]
+  defp css_url(_tag, attribute), do: attribute
+
+  defp url_char?(char), do: char > ?\s and char != 127 and char not in ~c[<>"'()\\{}]
 
   @doc false
   # Interpolated values that are lists may contain rendered templates, as from
@@ -68,25 +80,37 @@ defmodule MjmlEEx.TagEngine.Runtime do
   @doc false
   # The rules that runtime validation checks. Templates pass their levels for them.
   @spec validated_rules() :: [atom()]
-  def validated_rules, do: [:unknown_attribute, :invalid_value]
+  def validated_rules, do: [:unknown_attribute, :invalid_value, :unsupported_value]
 
   # With `config :mjml_eex, runtime_validation: :raise` or `:warn`, the values of MJML
   # attributes that come from expressions are checked as they're rendered. A problem is
   # reported at the lower of that setting and the template's level for its rule, so a rule the
   # template sets to :warn only warns, and one set to :skip isn't checked.
-  defp maybe_validate(tag, attributes, {file, line, column, levels}) do
+  defp maybe_validate(tag, attributes, location) do
     case runtime_validation() do
       :skip ->
         :ok
 
       mode ->
+        {file, line, column, levels, suffix} = report_at(location)
+
         for {name, value} <- attributes, value not in [nil, false] do
           with %ValidationError{rule: rule} = error <- Validator.check_attribute(tag, name, value_to_string(value)) do
-            report(%{error | file: file, line: line, column: column}, lower(mode, Map.get(levels, rule, :error)))
+            error = %{error | file: file, line: line, column: column, message: error.message <> suffix}
+            report(error, lower(mode, Map.get(levels, rule, :error)))
           end
         end
 
         :ok
+    end
+  end
+
+  # Problems in the core components and prebuilt templates come from the values the user's
+  # template passes them, so they're reported where it calls the component, at its levels
+  defp report_at({file, line, column, levels, library?}) do
+    case library? && Component.__caller__() do
+      {file, line, column, levels, display} -> {file, line, column, levels, " (for #{display})"}
+      _ -> {file, line, column, levels, ""}
     end
   end
 

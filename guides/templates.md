@@ -18,6 +18,12 @@ Values are HTML-escaped. To insert markup you trust, use `raw/1`, which is impor
 <mj-text>{raw(@signature_html)}</mj-text>
 ```
 
+MJML turns many attributes into CSS, such as `color`, `font-family` or `padding`. Their values are HTML-escaped, so
+they can't add HTML, but they aren't checked as CSS: a `color` of `"red; display: none"` adds a declaration to the
+style. If a value comes from your users, check it before rendering, as `MjmlEEx.Theme.validate/1` does for theme
+values. URLs that MJML puts in CSS, in `background-url` and `mj-font`'s `href`, are percent-encoded, so they can't
+end the CSS `url(...)` they're in.
+
 Templates can call any function in the module, including private ones, and anything the module imports.
 
 Since `{` starts an expression, write a literal `{` in text as `&#123;` or `<%= "{" %>`. Inside `mj-style`, `style`
@@ -146,6 +152,9 @@ compiled.
 MJML calls tags such as `mj-text`, `mj-button` and `mj-table` "ending tags": their content is HTML, which is copied
 into the email as it is. Use HTML there, not other MJML components. Elsewhere, only MJML components are allowed.
 [Validation](validation.md) reports both mistakes.
+
+The HTML in a template is parsed, like the rest of it, so it has to be well-formed: close the tags you open, such as
+`<p>` and `<li>`. Void tags such as `<br>` and `<img>` need no closing tag. HTML you insert with `raw/1` isn't parsed.
 
 ## Errors
 

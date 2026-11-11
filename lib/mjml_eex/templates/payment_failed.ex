@@ -38,7 +38,8 @@ defmodule MjmlEEx.Templates.PaymentFailed do
     * `:address` - your company's address, for the footer.
     * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
       language of the template's text.
-    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
+    * `:dir` - the direction of the text: `"ltr"`, `"rtl"` or `"auto"` (the default). The
+      template's layout stays left to right.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -65,7 +66,7 @@ defmodule MjmlEEx.Templates.PaymentFailed do
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
   attr :lang, :string, default: "en"
-  attr :dir, :string, default: nil
+  attr :dir, :string, default: "auto", values: ~w(ltr rtl auto)
 
   def render(assigns) do
     assigns =

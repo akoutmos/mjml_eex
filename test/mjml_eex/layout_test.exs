@@ -145,7 +145,12 @@ defmodule MjmlEEx.LayoutTest do
     test "to_text/1 renders the email in its layout, and checks the assigns" do
       assert DefaultsEmail.to_text(%{}) == "Default title\n"
       assert DefaultsEmail.to_text(title: "Hi & welcome") == "Hi & welcome\n"
-      assert_raise ArgumentError, ~r/attr :title/, fn -> DefaultsEmail.to_text(title: 42) end
+
+      assert_raise ArgumentError,
+                   ~r/invalid assigns for MjmlEEx.LayoutTest.DefaultsEmail.to_text\/1:.*attr :title/s,
+                   fn ->
+                     DefaultsEmail.to_text(title: 42)
+                   end
     end
   end
 

@@ -42,7 +42,8 @@ defmodule MjmlEEx.TagEngine.Compiler do
       source: ParseError.snippet_source(source, Keyword.get(opts, :line, 1)),
       indentation: indentation,
       caller: Keyword.get(opts, :caller),
-      levels: Validator.levels(Keyword.get(opts, :validation))
+      levels: Validator.levels(Keyword.get(opts, :validation), Keyword.get(opts, :caller)),
+      library?: library?(Keyword.get(opts, :caller))
     }
 
     substate = handle_node(nodes, @engine.init([]), state)
@@ -89,7 +90,7 @@ defmodule MjmlEEx.TagEngine.Compiler do
   # fragment, whose surroundings are only known where it's used. Errors fail the
   # compilation, warnings are printed with the template location.
   defp validate!(nodes, file, validation, layout, caller) do
-    levels = Validator.levels(validation)
+    levels = Validator.levels(validation, caller)
 
     if Enum.any?(levels, fn {_rule, level} -> level != :skip end) do
       problems =
@@ -301,8 +302,11 @@ defmodule MjmlEEx.TagEngine.Compiler do
       assigns = merge_assigns(roots, attr_pairs ++ slot_pairs)
 
       ast =
-        quote line: meta.line do
-          MjmlEEx.Component.__call__(unquote(fun), unquote(assigns))
+        if state.library? do
+          quote(line: meta.line, do: MjmlEEx.Component.__call__(unquote(fun), unquote(assigns)))
+        else
+          call_site = call_site(meta, display_name(type, name), state)
+          quote(line: meta.line, do: MjmlEEx.Component.__call__(unquote(fun), unquote(assigns), unquote(call_site)))
         end
 
       @engine.handle_expr(substate, "=", ast)
@@ -675,8 +679,23 @@ defmodule MjmlEEx.TagEngine.Compiler do
   # validation checks
   defp location(%{line: line, column: column} = meta, state) do
     levels = Map.take(state.levels, Runtime.validated_rules())
-    Macro.escape({file(meta, state), line, column, levels})
+    Macro.escape({file(meta, state), line, column, levels, state.library?})
   end
+
+  # Where a component is called, for runtime validation errors in the components of MJML EEx
+  # (see MjmlEEx.Component.__call__/3)
+  defp call_site(%{line: line, column: column} = meta, display, state) do
+    levels = Map.take(state.levels, Runtime.validated_rules())
+    Macro.escape({file(meta, state), line, column, levels, display})
+  end
+
+  # The core components and prebuilt templates. Runtime validation errors in them are reported
+  # where the user's template calls them, at that template's levels.
+  defp library?(%Macro.Env{module: module}) when is_atom(module) and not is_nil(module) do
+    module == MjmlEEx.CoreComponents or String.starts_with?(Atom.to_string(module), "Elixir.MjmlEEx.Templates.")
+  end
+
+  defp library?(_caller), do: false
 
   defp parse_expr!({:expr, value, meta}, state), do: quoted!(value, meta, state)
 

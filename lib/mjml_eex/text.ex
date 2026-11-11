@@ -14,10 +14,21 @@ defmodule MjmlEEx.Text do
   #
   # Paragraphs are separated by a blank line.
 
+  alias MjmlEEx.ParseError
+  alias MjmlEEx.Spec.Generated
+  alias MjmlEEx.TagEngine.Parser
+  alias MjmlEEx.Text.Entities
+
+  # Components whose content is HTML (or text)
+  @ending_tags for {name, %{ending_tag: true}} <- Generated.components(), do: name
+
   @doc false
   @spec convert(String.t()) :: String.t()
   def convert(mjml) when is_binary(mjml) do
-    case mjml |> MjmlEEx.parse!() |> blocks() |> join_blocks("\n\n") do
+    # The content of ending tags is parsed on its own (see content/1)
+    nodes = Parser.parse!(mjml, file: "nofile", interpolation: false, raw_text_tags: @ending_tags)
+
+    case nodes |> blocks() |> join_blocks("\n\n") do
       "" -> ""
       text -> text <> "\n"
     end
@@ -27,6 +38,9 @@ defmodule MjmlEEx.Text do
 
   # The text of MJML nodes, as a list of blocks (paragraphs)
   defp blocks(nodes), do: Enum.flat_map(nodes, &block/1)
+
+  defp block({:block, :tag, name, attrs, children, _meta, _close}) when name in @ending_tags,
+    do: component(name, attrs, content(children))
 
   defp block({:block, :tag, name, attrs, children, _meta, _close}), do: component(name, attrs, children)
   defp block({:self_close, :tag, name, attrs, _meta}), do: component(name, attrs, [])
@@ -61,6 +75,27 @@ defmodule MjmlEEx.Text do
   end
 
   defp component(_name, _attrs, children), do: blocks(children)
+
+  # The HTML content of an ending tag, such as mj-text, parsed on its own. MJML accepts HTML
+  # that the parser doesn't, such as an unclosed <p> inserted with raw/1, or one half of a
+  # wrapper <div> in an mj-raw. That content keeps its text without its structure, rather than
+  # failing the whole email.
+  defp content(children) do
+    html = for {:text, text, _meta} <- children, into: "", do: text
+
+    try do
+      Parser.parse!(html, interpolation: false)
+    rescue
+      ParseError ->
+        text =
+          html
+          |> strip_comments()
+          |> String.replace(~r{<(script|style)\b.*?</\1\s*>}is, " ")
+          |> String.replace(~r/<[^>]*>/, " ")
+
+        [{:text, text, %{}}]
+    end
+  end
 
   @networks %{
     "dribbble" => "Dribbble",
@@ -325,63 +360,34 @@ defmodule MjmlEEx.Text do
   # clients show it.
   defp strip_comments(text), do: String.replace(text, ~r/<!--.*?-->/s, "")
 
-  @entities %{
-    "amp" => "&",
-    "apos" => "'",
-    "bull" => "•",
-    "cent" => "¢",
-    "check" => "✓",
-    "copy" => "©",
-    "darr" => "↓",
-    "deg" => "°",
-    "divide" => "÷",
-    "euro" => "€",
-    "gt" => ">",
-    "hellip" => "…",
-    "laquo" => "«",
-    "larr" => "←",
-    "ldquo" => "“",
-    "lsquo" => "‘",
-    "lt" => "<",
-    "mdash" => "—",
-    "middot" => "·",
-    "nbsp" => " ",
-    "ndash" => "–",
-    "para" => "¶",
-    "plusmn" => "±",
-    "pound" => "£",
-    "quot" => "\"",
-    "raquo" => "»",
-    "rarr" => "→",
-    "rdquo" => "”",
-    "reg" => "®",
-    "rsquo" => "’",
-    "sect" => "§",
-    "shy" => "",
-    "times" => "×",
-    "trade" => "™",
-    "uarr" => "↑",
-    "yen" => "¥",
-    "zwj" => "",
-    "zwnj" => ""
-  }
-
   defp decode(text) do
     if String.contains?(text, "&") do
       Regex.replace(~r/&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([a-zA-Z][a-zA-Z0-9]*));/, text, fn
-        entity, decimal, "", "" -> codepoint(String.to_integer(decimal), entity)
-        entity, "", hex, "" -> codepoint(String.to_integer(hex, 16), entity)
-        entity, "", "", name -> Map.get(@entities, name, entity)
+        entity, decimal, "", "" ->
+          codepoint(String.to_integer(decimal), entity)
+
+        entity, "", hex, "" ->
+          codepoint(String.to_integer(hex, 16), entity)
+
+        entity, "", "", name ->
+          case Entities.character(name) do
+            nil -> entity
+            <<codepoint::utf8>> -> codepoint(codepoint, entity)
+            characters -> characters
+          end
       end)
     else
       text
     end
   end
 
-  # Non-breaking spaces become spaces, and invisible characters, such as the ones used to pad
-  # preview text, are left out
-  defp codepoint(160, _entity), do: " "
+  # Whitespace and non-breaking spaces become spaces. Invisible characters, such as the ones
+  # used to pad preview text, and control characters are left out.
+  @controls Enum.to_list(0..8) ++ [11, 12] ++ Enum.to_list(14..31) ++ Enum.to_list(127..159)
+
+  defp codepoint(codepoint, _entity) when codepoint in [9, 10, 13, 160], do: " "
   defp codepoint(codepoint, _entity) when codepoint in [173, 847, 8203, 8204, 8205, 8288, 65_279], do: ""
+  defp codepoint(codepoint, _entity) when codepoint in @controls, do: ""
 
   defp codepoint(codepoint, _entity) when codepoint in 0..0x10FFFF and codepoint not in 0xD800..0xDFFF,
     do: <<codepoint::utf8>>

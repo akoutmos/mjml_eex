@@ -230,6 +230,20 @@ defmodule MjmlEEx.FormatterTest do
   end
 
   describe "regressions" do
+    test "<%# %> comments inside <%!-- --%> comments and EEx tags are left alone" do
+      source =
+        "<mj-column>\n  <%!-- disabled:\n<mj-text>a</mj-text>\n<%# note %>\n<mj-text>b</mj-text>\n--%>\n</mj-column>\n"
+
+      formatted = format(source)
+
+      assert formatted =~ "<%# note %>"
+      refute formatted =~ "<%!-- note --%>"
+      assert format(formatted) == formatted
+
+      assert format(~s(<mj-text><%= "<%#" %> <%# old %></mj-text>\n)) ==
+               ~s(<mj-text><%= "<%#" %> <%!-- old --%></mj-text>\n)
+    end
+
     test "a leading byte order mark is removed without shifting the content kept as written" do
       assert format("\uFEFF<mj-column><mj-text>hello</mj-text></mj-column>") ==
                "<mj-column>\n  <mj-text>hello</mj-text>\n</mj-column>\n"

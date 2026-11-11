@@ -191,6 +191,21 @@ defmodule MjmlEEx.EngineTest do
       assert html =~ "@import url(https://fonts.example.com/css?family=Inter&family=Roboto)"
     end
 
+    test "a dynamic background-url can't break out of the CSS url('...')" do
+      module =
+        sigil(
+          ~S|<mjml><mj-body><mj-section background-url={@url}><mj-column><mj-text>x</mj-text></mj-column></mj-section></mj-body></mjml>|
+        )
+
+      payload = "https://example.com/a.png?b=1&c=2') ; color:red; background:url('https://evil.example"
+      html = MjmlEEx.to_html(module.render(url: payload))
+
+      refute html =~ "') ;"
+
+      assert html =~
+               "url('https://example.com/a.png?b=1&amp;c=2%27%29%20;%20color:red;%20background:url%28%27https://evil.example')"
+    end
+
     test "a dynamic mj-font href can't break out of the CSS @import or the link tag" do
       module =
         sigil(
@@ -303,6 +318,47 @@ defmodule MjmlEEx.EngineTest do
       assert_raise ArgumentError, ~r/invalid config :mjml_eex, runtime_validation: :off/, fn ->
         render(module, c: "nope!")
       end
+    end
+
+    test "reports values passed to the core components where the template calls them, at its levels" do
+      Application.put_env(:mjml_eex, :runtime_validation, :raise)
+
+      body = fn validation ->
+        """
+        use MjmlEEx, validation: #{inspect(validation)}
+        import MjmlEEx.CoreComponents
+
+        def render(assigns) do
+          ~MJML\"\"\"
+          <.card>
+            <.button href="/go" font-size={@size}>Go</.button>
+            <mj-text color={@color}>Text</mj-text>
+          </.card>
+          \"\"\"
+        end
+        """
+      end
+
+      [{module, _binary}] =
+        Code.compile_string("defmodule MjmlEEx.EngineTest.CallSite do\n#{body.([])}\nend", "my_email.ex")
+
+      error = assert_raise MjmlEEx.ValidationError, fn -> module.to_html(size: "big", color: "red") end
+      assert {error.file, error.line} == {"my_email.ex", 8}
+      assert Exception.message(error) =~ "Attribute font-size has invalid value: big"
+      assert Exception.message(error) =~ "(for <.button>)"
+
+      # Tags in the template's own content are reported where they are
+      error = assert_raise MjmlEEx.ValidationError, fn -> module.to_html(size: "16px", color: "nope") end
+      assert {error.file, error.line} == {"my_email.ex", 9}
+      refute Exception.message(error) =~ "(for "
+
+      [{skipped, _binary}] =
+        Code.compile_string(
+          "defmodule MjmlEEx.EngineTest.CallSiteSkip do\n#{body.(invalid_value: :skip)}\nend",
+          "my_email.ex"
+        )
+
+      assert [size: "big", color: "nope"] |> skipped.render() |> MjmlEEx.to_mjml() =~ ~s(font-size="big")
     end
 
     test "follows the template's levels for its rules" do

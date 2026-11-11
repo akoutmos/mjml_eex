@@ -17,7 +17,7 @@ defmodule MyApp.Emails.Receipt do
 
   def render(assigns) do
     ~MJML"""
-    <.email title="Your receipt from Acme" preview={"Thanks for your order, #{@name}!"}>
+    <.email title="Your receipt from Acme" preview={"Thanks for your order, #{@name}!"} lang="en">
       <.header title="Acme" href="https://acme.com">
         <:link href="https://acme.com/orders">Orders</:link>
         <:link href="https://acme.com/help">Help</:link>
@@ -70,7 +70,7 @@ in cards:
 | `theme/1` | The theme's defaults for the document | `mj-attributes`, `mj-style` | `mj-head` |
 | `header/1` | A logo or title, and optional links | `mj-section` | `email/1`, `mj-body`, `mj-wrapper` |
 | `hero/1` | A banner in a bold color or with a background image | `mj-section` | `email/1`, `mj-body`, `mj-wrapper` |
-| `card/1` | A rounded box for content | `mj-section` | `email/1`, `mj-body`, `mj-wrapper` |
+| `card/1` | A rounded box for content | `mj-section` (attributes go to its `mj-column`) | `email/1`, `mj-body`, `mj-wrapper` |
 | `footer/1` | Small print, links and social icons | `mj-section` | `email/1`, `mj-body`, `mj-wrapper` |
 | `heading/1` | A heading, level 1 to 3 | `mj-text` | `card/1`, `hero/1`, `mj-column` |
 | `text/1` | A paragraph: body, lead, muted, small or an eyebrow label | `mj-text` | `card/1`, `hero/1`, `mj-column` |
@@ -119,7 +119,7 @@ defmodule MyApp.Emails.Layout do
 
   def render(assigns) do
     ~MJML"""
-    <.email title={@subject} preview={assigns[:preview]}>
+    <.email title={@subject} preview={assigns[:preview]} lang="en">
       <.header logo="https://acme.com/logo.png" logo_alt="Acme" href="https://acme.com" />
       {@inner_content}
       <.footer>
@@ -152,7 +152,8 @@ end
 
 If you write the `mjml` document yourself instead of using `email/1`, put `theme/1` in its `mj-head`. It sets the
 theme's font, text color and link color for the document, so MJML tags such as `mj-text` match the components. The
-components themselves are styled with or without it.
+components set their colors and sizes themselves, but they take the theme's font from it: without it, their text is in
+MJML's default font.
 
 ## Theming
 
@@ -165,15 +166,15 @@ config :mjml_eex, :theme,
   radius: "12px"
 ```
 
-The tokens are colors (`primary`, `background`, `surface`, `text`, `heading`, `muted`, `border`, and the callout
-colors), fonts and sizes. See `MjmlEEx.Theme` for all of them and their defaults. Values are MJML attribute values,
+The tokens are colors (`primary`, `primary_text`, `background`, `surface`, `subtle`, `text`, `heading`, `muted`,
+`border`, and the callout colors), fonts and sizes. See `MjmlEEx.Theme` for all of them and their defaults. Values are MJML attribute values,
 so sizes need their unit, and they're checked against MJML's types: an invalid color raises an `ArgumentError` that
 names the token. Colors are hex colors (`"#E11D48"`), `rgb()` or `rgba()` colors, or color names.
 
 To use a web font, load it with an `mj-font` in the `:head` slot of `email/1`, and put it first in `font_family`:
 
 ```heex
-<.email title="Welcome">
+<.email title="Welcome" lang="en">
   <:head>
     <mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700" />
   </:head>
@@ -221,8 +222,11 @@ end
 
 ## Changing one component
 
-Each component passes the attributes it doesn't declare to the MJML tag it renders, and they take precedence over the
-theme's styles. A `button/1` renders an `mj-button`, so it takes any `mj-button` attribute:
+Each component passes the attributes it doesn't declare to an MJML tag it renders, and they take precedence over the
+attributes the component sets on that tag. They don't change the inline styles of the HTML inside it, such as a
+badge's pill or a code's digits. A `button/1` renders an `mj-button`, so it takes any `mj-button` attribute, and a
+`card/1` passes them to its `mj-column`. Each component's documentation says which tag they go to, and `avatar/1` and
+`link/1` only take the attributes they declare.
 
 ```heex
 <.button href={@url} align="center" font-size="18px" inner-padding="16px 32px">Get started</.button>

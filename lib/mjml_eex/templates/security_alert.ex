@@ -28,14 +28,15 @@ defmodule MjmlEEx.Templates.SecurityAlert do
     * `:name` - the user's name, to greet them with.
     * `:device`, `:location`, `:ip_address` and `:occurred_at` - where and when it happened.
       The email lists the ones that are given.
-    * `:preview` - the preview text. Defaults to `:description`.
+    * `:preview` - the preview text. Defaults to a sentence about the event.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:support_url` - the URL of your help page, linked in the footer.
     * `:address` - your company's address, for the footer.
     * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
       language of the template's text.
-    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
+    * `:dir` - the direction of the text: `"ltr"`, `"rtl"` or `"auto"` (the default). The
+      template's layout stays left to right.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -62,7 +63,7 @@ defmodule MjmlEEx.Templates.SecurityAlert do
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
   attr :lang, :string, default: "en"
-  attr :dir, :string, default: nil
+  attr :dir, :string, default: "auto", values: ~w(ltr rtl auto)
 
   def render(assigns) do
     {title, description} = event_text(assigns.event, assigns.product_name)

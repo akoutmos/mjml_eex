@@ -91,7 +91,9 @@ defmodule MjmlEEx.CoreComponents do
 
     * `title` - the document's title (`mj-title`).
     * `preview` - the preview text that inboxes show after the subject (`mj-preview`).
-    * Other attributes, such as `lang`, are passed to `mjml`.
+    * Other attributes are passed to `mjml`. Set `lang` to the email's language, such as
+      `lang="en"`, so that screen readers read it in the right voice (without it, the email
+      declares `lang="und"`, undetermined), and `dir="rtl"` for right-to-left languages.
 
   ## Slots
 
@@ -154,6 +156,8 @@ defmodule MjmlEEx.CoreComponents do
     </mj-attributes>
     <mj-style>
       a { color: <%= @theme.primary %>; }
+      .mjml-eex-hero-primary a { color: <%= @theme.primary_text %>; text-decoration: underline; }
+      .mjml-eex-hero-dark a { color: <%= @theme.surface %>; text-decoration: underline; }
     </mj-style>
     """
   end
@@ -177,7 +181,7 @@ defmodule MjmlEEx.CoreComponents do
   ## Attributes
 
     * `logo` - the URL of the logo image.
-    * `logo_alt` - the logo's alternative text.
+    * `logo_alt` - the logo's alternative text. Defaults to `title`.
     * `logo_width` - the width of the logo. Defaults to `"120px"`.
     * `title` - text to show when there's no logo.
     * `href` - the URL the logo or title links to.
@@ -238,7 +242,7 @@ defmodule MjmlEEx.CoreComponents do
     <mj-image
       :if={@logo}
       src={@logo}
-      alt={@logo_alt}
+      alt={@logo_alt || @title}
       width={@logo_width}
       href={@href}
       align={@brand_align}
@@ -324,7 +328,8 @@ defmodule MjmlEEx.CoreComponents do
 
   Its content is styled for its background: on `"primary"` and `"dark"` heroes, the
   components inside use a version of the theme with light text, so headings, text, links,
-  badges and codes are readable, and buttons are light with dark text.
+  badges and codes are readable, and buttons are light with dark text. Plain `<a>` links in
+  its text are styled to match by the theme's `<style>` (in `email/1`, or `theme/1`).
 
   Like cards, consecutive heroes and cards have a gap between them.
 
@@ -362,9 +367,17 @@ defmodule MjmlEEx.CoreComponents do
 
     image = assigns.background_image
 
+    # The theme's <style> (see theme/1) colors plain <a> links in primary and dark heroes
+    # with the hero's foreground color, rather than the primary color
+    css_class =
+      [if(assigns.variant != "surface", do: "mjml-eex-hero-#{assigns.variant}"), assigns.rest[:"css-class"]]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(" ")
+
     section =
       merge_attrs(
         [
+          "css-class": if(css_class != "", do: css_class),
           "background-color": background,
           "background-url": image,
           "background-size": if(image, do: "cover"),
@@ -373,7 +386,7 @@ defmodule MjmlEEx.CoreComponents do
           "border-radius": theme.radius,
           padding: "40px 0"
         ],
-        assigns.rest
+        Map.delete(assigns.rest, :"css-class")
       )
 
     assigns =
@@ -1372,9 +1385,14 @@ defmodule MjmlEEx.CoreComponents do
 
   Email clients that can't expand accordions show every item's text.
 
+  The expand and collapse icons are MJML's, which are images hosted on imgur.com. Imgur isn't
+  available everywhere (it blocks the UK, for example), so for emails to all your users, host
+  your own icons and set them with `icon-wrapped-url` and `icon-unwrapped-url`.
+
   ## Attributes
 
-  Attributes are passed to the `mj-accordion`, such as `border` or `padding`.
+  Attributes are passed to the `mj-accordion`, such as `border`, `padding`, or the icons'
+  `icon-wrapped-url` and `icon-unwrapped-url`.
 
   ## Slots
 
@@ -1483,6 +1501,10 @@ defmodule MjmlEEx.CoreComponents do
   `tumblr`, `xing`, `github`, `instagram`, `web`, `snapchat`, `youtube`, `vimeo`, `medium`,
   `soundcloud` and `dribbble`. For anything else, give the URL of an icon with `src`.
 
+  Each icon links to its `href`, such as your company's page on that network. (In `mj-social`,
+  some networks, such as `facebook`, `x` and `linkedin`, link to a page that shares the `href`
+  instead. For share buttons, write an `mj-social` yourself.)
+
   ## Attributes
 
     * `brand_colors` - use each network's own color instead of `muted`. Defaults to `false`.
@@ -1527,7 +1549,7 @@ defmodule MjmlEEx.CoreComponents do
     <mj-social :if={@link != []} {@attrs}>
       <mj-social-element
         :for={link <- @link}
-        name={link.name}
+        name={profile_network(link.name)}
         href={link.href}
         src={link[:src]}
         alt={link.name}
@@ -1538,6 +1560,14 @@ defmodule MjmlEEx.CoreComponents do
     </mj-social>
     """
   end
+
+  # For these networks, MJML turns the href into a "share this page" link (such as
+  # facebook.com/sharer/sharer.php?u=...). Their -noshare variants, with the same icon and color,
+  # link to the href itself.
+  @share_networks ~w(facebook twitter x google pinterest linkedin tumblr xing)
+
+  defp profile_network(name) when name in @share_networks, do: name <> "-noshare"
+  defp profile_network(name), do: name
 
   ## Helpers
 

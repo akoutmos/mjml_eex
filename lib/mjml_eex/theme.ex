@@ -20,7 +20,10 @@ defmodule MjmlEEx.Theme do
   ```
 
   Values are MJML attribute values, so sizes need their unit (`"16px"`), and they're checked
-  against MJML's types when the theme is built.
+  against MJML's types when the theme is built. Colors are hex colors (`"#E11D48"` or
+  `"#E14"`), `rgb()` or `rgba()` colors, or color names, which are the colors MJML accepts
+  and that Outlook can show. To check values that come from your users, such as a brand color
+  from a settings form, use `validate/1` when they're saved.
 
   ## Tokens
 
@@ -33,7 +36,8 @@ defmodule MjmlEEx.Theme do
     * `:subtle` - quiet fills inside cards: secondary buttons and codes. Defaults to `"#F4F4F5"`.
     * `:text` - body text. Defaults to `"#3F3F46"`.
     * `:heading` - headings and emphasized text. Defaults to `"#18181B"`.
-    * `:muted` - secondary text, such as table headers and footers. Defaults to `"#71717A"`.
+    * `:muted` - secondary text, such as table headers and footers. Defaults to `"#6B6B74"`,
+      which has enough contrast on `:background` for small text (WCAG AA).
     * `:border` - dividers and table rules. Defaults to `"#E4E4E7"`.
     * `:info`, `:success`, `:warning` and `:danger` - the titles of callouts, and the danger
       button. Default to `"#1D4ED8"`, `"#15803D"`, `"#B45309"` and `"#B91C1C"`.
@@ -59,6 +63,8 @@ defmodule MjmlEEx.Theme do
   `MjmlEEx.CoreComponents.email/1`, and put it first in `:font_family`.
   """
 
+  alias MjmlEEx.Spec.Types
+
   @system_fonts "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
   @monospace_fonts "SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace"
 
@@ -69,7 +75,7 @@ defmodule MjmlEEx.Theme do
             subtle: "#F4F4F5",
             text: "#3F3F46",
             heading: "#18181B",
-            muted: "#71717A",
+            muted: "#6B6B74",
             border: "#E4E4E7",
             info: "#1D4ED8",
             info_background: "#EFF6FF",
@@ -116,40 +122,48 @@ defmodule MjmlEEx.Theme do
           width: String.t()
         }
 
-  # The MJML attribute each token is checked as
+  # The MJML type each token is checked against, the type of the MJML attributes it's used in.
+  # The radii are also used in inline styles, so they're checked as sizes, rather than as the
+  # `string` type of MJML's border-radius attributes.
   @checks %{
-    primary: {"mj-text", "color"},
-    primary_text: {"mj-text", "color"},
-    background: {"mj-text", "color"},
-    surface: {"mj-text", "color"},
-    subtle: {"mj-text", "color"},
-    text: {"mj-text", "color"},
-    heading: {"mj-text", "color"},
-    muted: {"mj-text", "color"},
-    border: {"mj-text", "color"},
-    info: {"mj-text", "color"},
-    info_background: {"mj-text", "color"},
-    success: {"mj-text", "color"},
-    success_background: {"mj-text", "color"},
-    warning: {"mj-text", "color"},
-    warning_background: {"mj-text", "color"},
-    danger: {"mj-text", "color"},
-    danger_background: {"mj-text", "color"},
-    font_family: {"mj-text", "font-family"},
-    heading_font_family: {"mj-text", "font-family"},
-    monospace_font_family: {"mj-text", "font-family"},
-    font_size: {"mj-text", "font-size"},
-    line_height: {"mj-text", "line-height"},
-    radius: {"mj-column", "border-radius"},
-    button_radius: {"mj-column", "border-radius"},
-    width: {"mj-body", "width"}
+    primary: "color",
+    primary_text: "color",
+    background: "color",
+    surface: "color",
+    subtle: "color",
+    text: "color",
+    heading: "color",
+    muted: "color",
+    border: "color",
+    info: "color",
+    info_background: "color",
+    success: "color",
+    success_background: "color",
+    warning: "color",
+    warning_background: "color",
+    danger: "color",
+    danger_background: "color",
+    font_family: :font_family,
+    heading_font_family: :font_family,
+    monospace_font_family: :font_family,
+    font_size: "unit(px)",
+    line_height: "unit(px,%,)",
+    radius: "unit(px,%){1,4}",
+    button_radius: "unit(px,%){1,4}",
+    width: "unit(px)"
   }
+
+  @token_names Map.new(@checks, fn {key, _type} -> {Atom.to_string(key), key} end)
+
+  # MJML's color type accepts any value that contains an rgb(...) or rgba(...) color, so a
+  # color must also have this shape, with nothing before or after it
+  @color_shape ~r/\A(?:#[0-9a-f]+|rgba?\([0-9.,\s]*\)|[a-z]+)\z/i
 
   @key {__MODULE__, :theme}
 
   @doc """
   Builds a theme from the default theme and the given tokens. Raises `ArgumentError` for
-  unknown tokens and invalid values.
+  unknown tokens and invalid values; see `validate/1` for a version that doesn't raise.
 
   ## Examples
 
@@ -165,43 +179,86 @@ defmodule MjmlEEx.Theme do
   and invalid values.
   """
   @spec merge(t(), t() | map() | keyword()) :: t()
-  def merge(%__MODULE__{} = _theme, %__MODULE__{} = other), do: validate!(other)
-
   def merge(%__MODULE__{} = theme, tokens) when is_map(tokens) or is_list(tokens) do
-    Enum.reduce(tokens, theme, fn
-      {key, value}, theme when is_map_key(@checks, key) ->
-        Map.put(theme, key, value)
-
-      {key, _value}, _theme ->
-        raise ArgumentError,
-              "unknown theme token #{inspect(key)}. The tokens are: " <>
-                Enum.map_join(Enum.sort(Map.keys(@checks)), ", ", &inspect/1)
-    end)
-    |> validate!()
-  end
-
-  defp validate!(theme) do
-    for {key, {tag, attribute}} <- @checks, problem = problem(key, Map.fetch!(theme, key), tag, attribute) do
-      raise ArgumentError, "invalid theme token #{inspect(key)}: #{problem}, got: #{inspect(Map.fetch!(theme, key))}"
+    case apply_tokens(theme, tokens) do
+      {:ok, theme} -> theme
+      {:error, message} -> raise ArgumentError, message
     end
-
-    theme
   end
 
-  defp problem(:heading_font_family, nil, _tag, _attribute), do: nil
-  defp problem(_key, value, _tag, _attribute) when not is_binary(value), do: "must be a string"
+  @doc """
+  Builds a theme like `new/1`, but returns `{:error, message}` for unknown tokens and invalid
+  values instead of raising.
+
+  Use it to check tokens that come from your users, such as a brand color from a settings
+  form, when they're saved, rather than when an email is rendered with them.
+
+  ## Examples
+
+      iex> {:ok, theme} = MjmlEEx.Theme.validate(primary: "#E11D48")
+      iex> theme.primary
+      "#E11D48"
+
+      iex> {:error, message} = MjmlEEx.Theme.validate(primary: "#E11D48; display: none")
+      iex> message
+      ~s[invalid theme token :primary: must be a hex color, such as "#E11D48", an rgb() or rgba() ] <>
+        ~s[color, or a color name, got: "#E11D48; display: none"]
+  """
+  @spec validate(t() | map() | keyword()) :: {:ok, t()} | {:error, String.t()}
+  def validate(tokens) when is_map(tokens) or is_list(tokens), do: apply_tokens(%__MODULE__{}, tokens)
+
+  defp apply_tokens(_theme, %__MODULE__{} = theme), do: check(theme)
+
+  defp apply_tokens(theme, tokens) do
+    tokens
+    |> Enum.reduce_while({:ok, theme}, fn
+      {key, value}, {:ok, theme} when is_map_key(@checks, key) -> {:cont, {:ok, Map.put(theme, key, value)}}
+      {key, _value}, _acc -> {:halt, {:error, unknown_token(key)}}
+    end)
+    |> case do
+      {:ok, theme} -> check(theme)
+      error -> error
+    end
+  end
+
+  defp unknown_token(key) when is_map_key(@token_names, key),
+    do: "unknown theme token #{inspect(key)}. Tokens are atoms, such as #{inspect(@token_names[key])}"
+
+  defp unknown_token(key) do
+    "unknown theme token #{inspect(key)}. The tokens are: " <>
+      Enum.map_join(Enum.sort(Map.keys(@checks)), ", ", &inspect/1)
+  end
+
+  # Checks every token, and trims the whitespace around the values
+  defp check(theme) do
+    Enum.reduce_while(@checks, {:ok, theme}, fn {key, type}, {:ok, theme} ->
+      value = theme |> Map.fetch!(key) |> trim()
+
+      case problem(key, value, type) do
+        nil -> {:cont, {:ok, Map.put(theme, key, value)}}
+        problem -> {:halt, {:error, "invalid theme token #{inspect(key)}: #{problem}, got: #{inspect(value)}"}}
+      end
+    end)
+  end
+
+  defp trim(value) when is_binary(value), do: String.trim(value)
+  defp trim(value), do: value
+
+  defp problem(:heading_font_family, nil, _type), do: nil
+  defp problem(_key, value, _type) when not is_binary(value), do: "must be a string"
 
   # Font families end up in inline styles, where these would end the declaration
-  defp problem(_key, value, _tag, "font-family") do
+  defp problem(_key, value, :font_family) do
     if String.contains?(value, [";", "{", "}", "<", ">"]), do: "can't contain ;, {, }, < or >"
   end
 
-  defp problem(_key, value, tag, attribute) do
-    case MjmlEEx.Validator.check_attribute(tag, attribute, value) do
-      nil -> nil
-      error -> error.message |> String.replace_prefix("Attribute #{attribute} ", "") |> String.trim_trailing()
+  defp problem(_key, value, "color") do
+    if !Regex.match?(@color_shape, value) or Types.error_message("color", value) do
+      ~s[must be a hex color, such as "#E11D48", an rgb() or rgba() color, or a color name]
     end
   end
+
+  defp problem(_key, value, type), do: Types.error_message(type, value)
 
   @doc """
   The theme of the app: the default theme with the tokens from
@@ -241,6 +298,11 @@ defmodule MjmlEEx.Theme do
   configured theme.
 
   Emails are rendered in the process that calls `to_html/1`, so put the theme in that process.
+  The theme stays until it's changed, so in processes that render emails for several brands,
+  use `with_theme/2` instead.
+
+  Like `new/1`, it raises `ArgumentError` for invalid tokens. If they come from your users,
+  check them with `validate/1` when they're saved.
   """
   @spec put(t() | map() | keyword() | nil) :: :ok
   def put(nil) do
@@ -252,6 +314,26 @@ defmodule MjmlEEx.Theme do
     Process.put(@key, merge(configured(), theme))
     :ok
   end
+
+  @doc """
+  Calls `fun` with a theme for the emails it renders, then puts back the theme from before,
+  even if `fun` raises. Like `put/1`, the tokens are applied on top of the configured theme.
+  Returns what `fun` returns.
+
+  Use it in processes that render emails for several brands one after the other, such as a
+  GenServer or a job worker, so that one email's theme doesn't stay for the next, like
+  `Gettext.with_locale/2` does for the locale:
+
+  ```elixir
+  MjmlEEx.Theme.with_theme([primary: account.brand_color], fn ->
+    MyApp.Emails.Welcome.to_html(assigns)
+  end)
+  ```
+
+  Raises `ArgumentError` for invalid tokens, without calling `fun`.
+  """
+  @spec with_theme(t() | map() | keyword(), (-> result)) :: result when result: term()
+  def with_theme(tokens, fun) when is_function(fun, 0), do: __with__(merge(configured(), tokens), fun)
 
   @doc false
   # Calls fun with theme as the current theme, then puts back the one before. Components use it

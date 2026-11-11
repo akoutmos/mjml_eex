@@ -28,6 +28,9 @@ Call a component with `<.name>` when it's defined in the same module or imported
 
 To use `<.cta>` in your emails, import the module in them. Email modules (`use MjmlEEx`) can define components too.
 
+Keep email components in their own modules, apart from your app's `Phoenix.Component`s: both define `attr`, `slot`,
+`assign` and `render_slot`, so a module can't `use` both.
+
 MJML EEx comes with a set of ready-made components for common parts of emails, such as cards, buttons and tables. See
 [Core components](core_components.md).
 

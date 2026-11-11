@@ -10,7 +10,7 @@ defmodule MjmlEEx.Telemetry do
   * `[:mjml_eex, :render, :stop]` - When the rendering process has successfully completed
   * `[:mjml_eex, :render, :exception]` - When the rendering process resulted in an error
 
-  The events are emitted by a template module's `to_html/1`. `:mjml_template` is the rendered MJML; it's `nil` in
+  The events are emitted by a template module's `to_html/1` (not by `to_text/1`). `:mjml_template` is the rendered MJML; it's `nil` in
   the `:start` event, since rendering happens inside the span. `:module` is the template module, and
   `:mjml_template_file` is its template file.
 
@@ -58,8 +58,10 @@ defmodule MjmlEEx.Telemetry do
   def handle_event([:mjml_eex, :render, event], measurements, metadata, opts) do
     level = Keyword.fetch!(opts, :level)
 
-    Logger.log(level, "Event: #{inspect(event)}")
-    Logger.log(level, "Measurements: #{inspect(measurements)}")
-    Logger.log(level, "Metadata: #{inspect(metadata, printable_limit: :infinity)}")
+    # The messages are only built when the level isn't filtered out, as the metadata has the
+    # whole email
+    Logger.log(level, fn -> "Event: #{inspect(event)}" end)
+    Logger.log(level, fn -> "Measurements: #{inspect(measurements)}" end)
+    Logger.log(level, fn -> "Metadata: #{inspect(metadata, printable_limit: :infinity)}" end)
   end
 end

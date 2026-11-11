@@ -28,10 +28,14 @@ defmodule MjmlEEx.Templates.SecurityAlert do
     * `:name` - the user's name, to greet them with.
     * `:device`, `:location`, `:ip_address` and `:occurred_at` - where and when it happened.
       The email lists the ones that are given.
+    * `:preview` - the preview text. Defaults to `:description`.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:support_url` - the URL of your help page, linked in the footer.
     * `:address` - your company's address, for the footer.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -52,10 +56,13 @@ defmodule MjmlEEx.Templates.SecurityAlert do
   attr :location, :string, default: nil
   attr :ip_address, :string, default: nil
   attr :occurred_at, :string, default: nil
+  attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     {title, description} = event_text(assigns.event, assigns.product_name)
@@ -67,7 +74,7 @@ defmodule MjmlEEx.Templates.SecurityAlert do
       |> assign(:details?, Enum.any?([:device, :location, :ip_address, :occurred_at], &assigns[&1]))
 
     ~MJML"""
-    <.email title={@title} preview={@description}>
+    <.email title={@title} preview={@preview || @description} lang={@lang} dir={@dir}>
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.card padding="32px 0">
         <.badge variant="warning" padding="0 25px 4px">Security alert</.badge>

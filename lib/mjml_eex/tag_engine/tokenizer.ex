@@ -402,8 +402,10 @@ defmodule MjmlEEx.TagEngine.Tokenizer do
     case normalize_tag(acc, line, column + 1, false, state) do
       [{:tag, name, attrs, meta} | _] = acc ->
         cond do
+          # Raw text has no interpolation and no closing tag that pops the brace counter, so
+          # an mjml-no-curly-interpolation that came before mjml-raw-text ends here
           Tags.raw_text?(name, attrs) ->
-            handle_raw_text(rest, name, line, column + 1, [], acc, state)
+            handle_raw_text(rest, name, line, column + 1, [], acc, end_childless_tag(acc, state))
 
           # Void tags have no closing tag to pop the brace counter
           meta[:closing] == :void ->

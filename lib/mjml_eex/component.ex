@@ -66,6 +66,7 @@ defmodule MjmlEEx.Component do
   are only checked when the declarations are already known.
   """
 
+  alias MjmlEEx.Component.Calls
   alias MjmlEEx.Rendered
   alias Phoenix.HTML.Safe
 
@@ -87,6 +88,7 @@ defmodule MjmlEEx.Component do
         }
 
   defmacro __using__(opts) do
+    MjmlEEx.__reject_removed_options__(opts)
     opts = Keyword.validate!(opts, [:validation])
     # Fail early on invalid settings
     _ = MjmlEEx.Validator.levels(opts[:validation])
@@ -215,7 +217,7 @@ defmodule MjmlEEx.Component do
       not Keyword.has_key?(opts, :default) or type == :global ->
         nil
 
-      not type_matches?(type, opts[:default]) ->
+      not Calls.type_matches?(type, opts[:default]) ->
         "the default of attr #{inspect(name)} must be of type #{inspect(type)}, got: #{inspect(opts[:default])}"
 
       opts[:values] && opts[:default] not in opts[:values] ->
@@ -298,7 +300,7 @@ defmodule MjmlEEx.Component do
         )
 
       true ->
-        register(env.module, name, kind, attrs, slots, env.line)
+        __register__(env.module, name, kind, attrs, slots, env.line)
     end
   end
 
@@ -307,7 +309,7 @@ defmodule MjmlEEx.Component do
   @doc false
   # Registers declared attrs and slots for a function. Also used by MjmlEEx for render/1
   # when it's generated from a template file.
-  def register(module, name, kind, attrs, slots, line) do
+  def __register__(module, name, kind, attrs, slots, line) do
     components = Module.get_attribute(module, :__mjml_eex_components__)
 
     if Map.has_key?(components, name) do
@@ -321,12 +323,12 @@ defmodule MjmlEEx.Component do
   end
 
   @doc false
-  defmacro __before_compile__(env), do: component_definitions(env.module)
+  defmacro __before_compile__(env), do: __component_definitions__(env.module)
 
   @doc false
-  # Wrappers that apply defaults for components defined in the module, and __components__/0.
+  # Wrappers that apply defaults for components defined in the module, and __mjml_eex_components__/0.
   # `except:` names functions that apply their defaults themselves.
-  def component_definitions(module, opts \\ []) do
+  def __component_definitions__(module, opts \\ []) do
     components = Module.get_attribute(module, :__mjml_eex_components__)
     pending = pending_declarations(module)
 
@@ -363,7 +365,7 @@ defmodule MjmlEEx.Component do
       unquote_splicing(wrappers)
 
       @doc false
-      def __components__, do: unquote(Macro.escape(components))
+      def __mjml_eex_components__, do: unquote(Macro.escape(components))
 
       @doc false
       def __mjml_eex_sources__, do: unquote(Macro.escape(Module.get_attribute(module, :__mjml_eex_sources__) || %{}))
@@ -375,13 +377,12 @@ defmodule MjmlEEx.Component do
   @doc false
   # Records the MJML template of a function (its first ~MJML sigil, or a template file), so it
   # can be used as a layout
-  def record_source(module, fun, info) do
+  def __record_source__(module, fun, info) do
     sources = Module.get_attribute(module, :__mjml_eex_sources__) || %{}
     Module.put_attribute(module, :__mjml_eex_sources__, Map.put_new(sources, fun, info))
   end
 
-  @doc false
-  def pending_declarations(module) do
+  defp pending_declarations(module) do
     Module.get_attribute(module, :__mjml_eex_pending_attrs__) ++
       Module.get_attribute(module, :__mjml_eex_pending_slots__)
   end
@@ -534,7 +535,7 @@ defmodule MjmlEEx.Component do
   # Checks a template module's assigns against its render/1 declarations. Raises with every
   # problem found.
   def __check_assigns__(module, assigns) do
-    case module.__components__() do
+    case module.__mjml_eex_components__() do
       %{render: %{attrs: attrs, slots: slots}} ->
         problems =
           Enum.flat_map(attrs, &check_attr(&1, assigns)) ++
@@ -566,7 +567,7 @@ defmodule MjmlEEx.Component do
 
   defp check_value(%{name: name, type: type, values: values}, value) do
     cond do
-      not type_matches?(type, value) ->
+      not Calls.type_matches?(type, value) ->
         ["attr #{inspect(name)} must be of type #{inspect(type)}, got: #{inspect(value)}"]
 
       values != nil and value not in values ->
@@ -576,17 +577,6 @@ defmodule MjmlEEx.Component do
         []
     end
   end
-
-  @doc false
-  def type_matches?(_type, nil), do: true
-  def type_matches?(:any, _value), do: true
-  def type_matches?(:string, value), do: is_binary(value)
-  def type_matches?(:integer, value), do: is_integer(value)
-  def type_matches?(:boolean, value), do: is_boolean(value)
-  def type_matches?(:atom, value), do: is_atom(value)
-  def type_matches?(:list, value), do: is_list(value)
-  def type_matches?(:map, value), do: is_map(value)
-  def type_matches?(:global, value), do: is_map(value) or is_list(value)
 
   defp compile_error!(module, line, message) do
     file = if Module.open?(module), do: Module.get_attribute(module, :__mjml_eex_file__)

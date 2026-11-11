@@ -87,23 +87,32 @@ when the file changes.
 
 ## Sending it
 
-MJML EEx only builds the HTML, so you can send it with any mailer. With
-[Swoosh](https://hexdocs.pm/swoosh):
+MJML EEx builds the email's HTML, and a plain-text version of it with the generated `to_text/1`, so you can send
+it with any mailer. Sending both, as a multipart email, helps deliverability and readers whose email client shows
+plain text. With [Swoosh](https://hexdocs.pm/swoosh):
 
 ```elixir
 defmodule MyApp.UserNotifier do
   import Swoosh.Email
 
+  alias MyApp.Emails.Welcome
+
   def welcome(user) do
+    assigns = [first_name: user.first_name, cta_url: "https://example.com"]
+
     new()
     |> to({user.name, user.email})
     |> from({"MyApp", "hello@example.com"})
     |> subject("Welcome to MyApp!")
-    |> html_body(MyApp.Emails.Welcome.to_html(first_name: user.first_name, cta_url: "https://example.com"))
+    |> html_body(Welcome.to_html(assigns))
+    |> text_body(Welcome.to_text(assigns))
     |> MyApp.Mailer.deliver()
   end
 end
 ```
+
+The plain text follows the email's content: paragraphs, lists and tables, with links written as `text (url)` and
+buttons as `label: url`. See `MjmlEEx.to_text/1`.
 
 ## Translations
 
@@ -128,3 +137,4 @@ end
 - [Prebuilt templates](prebuilt_templates.md): complete emails for password resets, invoices, newsletters and more.
 - [Layouts](layouts.md): share the head and the outer structure of your emails.
 - [Validation](validation.md): what's checked at compile time, and how to configure it.
+- [Testing and previewing](testing.md): test your emails, and see them in development.

@@ -136,9 +136,12 @@ defmodule MjmlEEx.Formatter do
     line_length = opts[:mjml_line_length] || opts[:line_length] || @default_line_length
 
     # Like the Elixir formatter, write "\n" line endings. EEx drops <%# %> comments without a
-    # token, so they're rewritten as <%!-- --%>, the syntax that replaced them.
+    # token, so they're rewritten as <%!-- --%>, the syntax that replaced them. The parser drops a
+    # leading byte order mark, so it's removed here too, or the content kept as written would be
+    # sliced from the source one character off.
     source =
       source
+      |> String.trim_leading("\uFEFF")
       |> String.replace("\r\n", "\n")
       |> then(&Regex.replace(~r/<%#(.*?)%>/s, &1, "<%!--\\1--%>"))
 

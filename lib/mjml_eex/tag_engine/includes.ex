@@ -122,11 +122,11 @@ defmodule MjmlEEx.TagEngine.Includes do
         {[], %{state | head: [element("mj-style", inline, content, meta) | state.head]}}
 
       _mjml ->
-        include_mjml(content, included, meta, state)
+        include_mjml(content, included, state)
     end
   end
 
-  defp include_mjml(content, included, meta, state) do
+  defp include_mjml(content, included, state) do
     interpolation = Path.extname(included) == ".meex"
 
     nodes =
@@ -136,18 +136,17 @@ defmodule MjmlEEx.TagEngine.Includes do
 
     state = %{state | stack: [included | state.stack]}
 
+    # A whole document (with an <mjml> root, whatever its attributes) is included as its body,
+    # and its head goes into the document's head. Anything else is included as it is.
     {nodes, state} =
-      if String.contains?(content, "<mjml>") do
-        root =
-          Enum.find(nodes, &match?({:block, :tag, "mjml", _, _, _, _}, &1)) ||
-            error!("can't find the <mjml> root of #{included}", meta, included)
+      case Enum.find(nodes, &match?({:block, :tag, "mjml", _, _, _, _}, &1)) do
+        {:block, :tag, "mjml", _, children, _, _} ->
+          {body, state} = children |> child_nodes("mj-body") |> expand_nodes(Path.dirname(included), included, state)
+          {head, state} = children |> child_nodes("mj-head") |> expand_nodes(Path.dirname(included), included, state)
+          {body, %{state | head: Enum.reverse(head) ++ state.head}}
 
-        {:block, :tag, "mjml", _, children, _, _} = root
-        {body, state} = children |> child_nodes("mj-body") |> expand_nodes(Path.dirname(included), included, state)
-        {head, state} = children |> child_nodes("mj-head") |> expand_nodes(Path.dirname(included), included, state)
-        {body, %{state | head: Enum.reverse(head) ++ state.head}}
-      else
-        expand_nodes(nodes, Path.dirname(included), included, state)
+        nil ->
+          expand_nodes(nodes, Path.dirname(included), included, state)
       end
 
     {nodes, %{state | stack: tl(state.stack)}}

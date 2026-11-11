@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0-rc.1] - 2026-10-02
+
+1.0 replaces the EEx-based template engine with a HEEx-style one. This is a breaking change; 0.x templates and modules
+need updating. See the [Migrating from 0.x](guides/migrating_from_0x.md) guide.
 
 ### Added
 
@@ -16,17 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a hero is styled for the hero's color. `theme/1` adds the theme's defaults to a hand-written `mj-head`. See the
   [Core components](guides/core_components.md) guide.
 - `MjmlEEx.Theme`: the colors, fonts and sizes of the core components. Set them for the app with
-  `config :mjml_eex, :theme, ...`, or for one process with `MjmlEEx.Theme.put/1`.
+  `config :mjml_eex, :theme, ...`, or for one process with `MjmlEEx.Theme.put/1`. `MjmlEEx.Theme.validate/1` checks
+  values that come from your users, such as a brand color, without raising, and `MjmlEEx.Theme.with_theme/2` sets a
+  theme only while a function renders.
 - Prebuilt templates for common emails, built with the core components: `MjmlEEx.Templates.Welcome`, `VerifyEmail`,
   `MagicLink`, `OneTimePassword`, `ForgotPassword`, `TeamInvitation`, `SecurityAlert`, `TrialConversion`,
   `PaymentFailed`, `Invoice`, `OrderConfirmation`, `Webinar`, `Newsletter`, `ProductLaunch` and `FlashSale`. Render
-  one with your content, or copy it into your app to change it. See the
+  one with your content, or copy it into your app to change it. Every template takes `:preview`, `:lang` (`"en"` by
+  default) and `:dir`, and the marketing templates require an `:unsubscribe_url` and an `:address`. See the
   [Prebuilt templates](guides/prebuilt_templates.md) guide.
-
-## [1.0.0-rc.1] - 2026-10-02
-
-1.0 replaces the EEx-based template engine with a HEEx-style one. This is a breaking change; 0.x templates and modules
-need updating. See the [Migrating from 0.x](guides/migrating_from_0x.md) guide.
 
 ### Changed
 
@@ -59,6 +60,12 @@ need updating. See the [Migrating from 0.x](guides/migrating_from_0x.md) guide.
   implement `compile/1` keep working.
 - `MjmlEEx.validate/2`, which checks plain MJML against the MJML spec, and `MjmlEEx.parse/2` and `MjmlEEx.parse!/2`,
   which parse it.
+- Email modules have a generated `to_text/1`, and `MjmlEEx.to_text/1` converts rendered MJML, for a plain-text
+  version of an email to send with the HTML. The text follows the email's content: paragraphs, lists and tables, with
+  links written as `text (url)` and buttons as `label: url`. `to_html/1` and `to_text/1` are overridable, and can
+  call `super/1`.
+- **Breaking:** `to_html/1` and `MjmlEEx.to_html/2` raise `MjmlEEx.CompileError`, with the compiler's `:reason` and
+  the email's `:module`, instead of a `RuntimeError` when the MJML can't be compiled to HTML.
 - Function components with `use MjmlEEx.Component`: `attr`, `slot`, `render_slot/2`, `:let`, named slots and `:global`
   attributes, called as `<.name>` or `<Module.name>`. They compile to direct function calls.
 - Component calls are checked at compile time: unknown and missing attributes and slots, and literal values against
@@ -91,7 +98,7 @@ need updating. See the [Migrating from 0.x](guides/migrating_from_0x.md) guide.
   compiled with the Rust NIF. If you rely on the Node compiler, stay on mjml_eex 0.13 or implement your own compiler
   with the `MjmlEEx.Compiler` behaviour.
 
-## [0.13.0] - 2025-12-12
+## [0.13.0] - 2025-12-15
 
 - Upgraded to MJML 5.3
 - Allow comments (e.g. `<%!-- this is some comment --%>`) in templates
@@ -114,7 +121,7 @@ need updating. See the [Migrating from 0.x](guides/migrating_from_0x.md) guide.
 
 - Upgrades the dependencies to the latest versions.
 
-## [0.9.1] - 2022-02-10
+## [0.9.1] - 2023-02-13
 
 ### Changed
 

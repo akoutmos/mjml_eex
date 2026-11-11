@@ -54,7 +54,10 @@ defmodule MjmlEEx.TemplateValidationTest do
                  "    email.ex:9:11: mj-text cannot be used inside mj-section, only inside: mj-attributes, mj-column, mj-hero\n" <>
                  ~s(    email.ex:9:20: Attribute colour is illegal \(did you mean "color"?\)\n) <>
                  "    email.ex:10:22: Attribute padding has invalid value: 10 for type Unit, only accepts (px, %) units and 1 to 4 value(s)\n" <>
-                 "    email.ex:11:34: Attribute fluid-on-mobile has invalid value: yes for type Boolean \n"
+                 "    email.ex:11:34: Attribute fluid-on-mobile has invalid value: yes for type Boolean \n" <>
+                 "\nTo allow them, set their rules to :warn or :skip, for the whole app or for one module:\n\n" <>
+                 "    config :mjml_eex, validation: [invalid_child: :warn, unknown_attribute: :warn, invalid_value: :warn]\n" <>
+                 "    use MjmlEEx, validation: [invalid_child: :warn, unknown_attribute: :warn, invalid_value: :warn]\n"
     end
 
     test "template files are validated too, with their own locations" do

@@ -40,7 +40,7 @@ You can also move the template into the module, in a `render/1` that uses the `~
 
 Remove the `:mode` option. Templates always run their Elixir code first and compile the resulting MJML when the email
 is rendered, which takes microseconds with mjml_nif. Compile mode is gone. `use MjmlEEx` rejects options it doesn't
-know, so a leftover `:mjml_template` or `:mode` is a compile error.
+know, so a leftover `:mjml_template` or `:mode` is a compile error that says what to change.
 
 ## Rendering
 

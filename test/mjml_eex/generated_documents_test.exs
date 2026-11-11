@@ -308,8 +308,11 @@ defmodule MjmlEEx.GeneratedDocumentsTest do
     end
   end
 
-  # mj-font's href goes into a CSS @import, where entities aren't decoded, so only quotes are escaped
-  defp escape(value, {"mj-font", "href"}), do: String.replace(value, "\"", "&quot;")
+  # mj-font's href goes into a CSS @import, where entities aren't decoded, so the characters
+  # that could break out of it are percent-encoded instead
+  defp escape(value, {"mj-font", "href"}),
+    do: URI.encode(value, &(&1 > ?\s and &1 != 127 and &1 not in ~c[<>"'()\\{}]))
+
   defp escape(value, _context), do: value |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 
   ## Properties

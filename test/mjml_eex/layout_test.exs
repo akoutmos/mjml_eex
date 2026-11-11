@@ -141,6 +141,12 @@ defmodule MjmlEEx.LayoutTest do
       assert mjml =~ "<mj-title>Default title</mj-title>"
       assert mjml =~ "<mj-text>Default title</mj-text>"
     end
+
+    test "to_text/1 renders the email in its layout, and checks the assigns" do
+      assert DefaultsEmail.to_text(%{}) == "Default title\n"
+      assert DefaultsEmail.to_text(title: "Hi & welcome") == "Hi & welcome\n"
+      assert_raise ArgumentError, ~r/attr :title/, fn -> DefaultsEmail.to_text(title: 42) end
+    end
   end
 
   describe "function component layouts" do
@@ -314,6 +320,16 @@ defmodule MjmlEEx.LayoutTest do
 
       assert_raise CompileError, ~r/the layout MjmlEEx.LayoutTest.Missing of .* isn't available/, fn ->
         compile("<mj-section />", "MjmlEEx.LayoutTest.Missing")
+      end
+    end
+
+    test "a :layout that isn't a module or {module, function} raises" do
+      assert_raise ArgumentError, ~r/the :layout option must be a module or \{module, function\}/, fn ->
+        compile("<mj-section />", "{MjmlEEx.LayoutTest.BaseLayout, :render, :oops}")
+      end
+
+      assert_raise ArgumentError, ~r/the :layout option must be a module or \{module, function\}/, fn ->
+        compile("<mj-section />", ~s("BaseLayout"))
       end
     end
 

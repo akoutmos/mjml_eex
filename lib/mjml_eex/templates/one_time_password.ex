@@ -24,10 +24,14 @@ defmodule MjmlEEx.Templates.OneTimePassword do
     * `:expires_in` - how long the code works for. Defaults to `"10 minutes"`.
     * `:device`, `:location` and `:requested_at` - where and when the code was requested.
       The email lists the ones that are given.
+    * `:preview` - the preview text. Defaults to a sentence with the code, so it shows in the inbox.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:support_url` - the URL of your help page, linked in the footer.
     * `:address` - your company's address, for the footer.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -44,16 +48,21 @@ defmodule MjmlEEx.Templates.OneTimePassword do
   attr :device, :string, default: nil
   attr :location, :string, default: nil
   attr :requested_at, :string, default: nil
+  attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     ~MJML"""
     <.email
       title={"Your #{@product_name} verification code"}
-      preview={"Your verification code is #{@code}. It expires in #{@expires_in}."}
+      preview={@preview || "Your verification code is #{@code}. It expires in #{@expires_in}."}
+      lang={@lang}
+      dir={@dir}
     >
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.card padding="32px 0">

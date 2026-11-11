@@ -109,18 +109,24 @@ defmodule MjmlEEx.Spec.Overlay do
     ] ++ full_width ++ ignored
   end
 
-  defp ignored_attributes do
+  # Checked against mjml_nif by the "mjml_nif ignores the attributes listed" test
+  @doc false
+  def ignored_attributes do
     %{
+      "mjml" => ["owa"],
       "mj-accordion-title" => ["font-weight"],
       "mj-body" => ["id"],
       "mj-button" => ["title"],
       "mj-hero" => ["border-radius"],
       "mj-image" => ["border-top", "border-bottom", "sizes"],
-      "mj-section" => ["gutter"],
-      "mj-social" => ["border"],
+      "mj-raw" => ["position"],
+      "mj-section" => ["gutter", "text-padding"],
+      "mj-social" => ["border", "table-layout"],
       "mj-social-element" => ["border", "icon-position", "sizes", "srcset"],
-      "mj-table" => ["role"],
-      "mj-wrapper" => ["gap"]
+      "mj-spacer" => ["border", "border-top", "border-bottom", "border-left", "border-right"],
+      "mj-table" => ["font-weight", "role"],
+      "mj-text" => ["background-color"],
+      "mj-wrapper" => ["gap", "gutter", "text-padding"]
     }
   end
 

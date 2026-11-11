@@ -34,7 +34,7 @@ MJML's. Some valid MJML can't be compiled by mjml_nif, or isn't rendered the way
 | `:unsupported_value`   | An attribute mjml_nif ignores or handles differently than MJML, such as `mj-style inline="inline"` or `gap` on `mj-wrapper` |
 | `:unknown_class`       | An `mj-class` name that isn't defined in `mj-attributes`                                    |
 | `:empty_title`         | An empty `mj-title`                                                                         |
-| `:component_attribute` | A [component](components.md) call with an unknown or missing attribute, or an invalid value |
+| `:component_attribute` | A [component](components.md) call with an unknown or missing attribute, or an invalid value. Attributes passed through a `:global` for an MJML tag are checked as that tag's (`:unknown_attribute`, `:invalid_value`) |
 | `:component_slot`      | A component call with an unknown or missing slot                                            |
 
 A template whose root is `<mjml>` is checked as a whole document. Other templates, such as a component that renders
@@ -57,10 +57,12 @@ message that says so:
   in `mjml`, `mj-head`, `mj-body`, `mj-wrapper`, `mj-section`, `mj-group`, `mj-column`, `mj-hero`, `mj-accordion`,
   `mj-navbar` and `mj-social`. Outlook conditional comments (`<!--[if mso]>`) have to be in an `mj-raw`.
 - MJML tags must be lowercase.
-- mjml_nif ignores these attributes: `font-weight` on `mj-accordion-title`, `id` on `mj-body`, `title` on
-  `mj-button`, `border-radius` on `mj-hero`, `border-top`, `border-bottom` and `sizes` on `mj-image`, `gutter` on
-  `mj-section`, `border` on `mj-social`, `border`, `icon-position`, `sizes` and `srcset` on `mj-social-element`,
-  `role` on `mj-table`, and `gap` on `mj-wrapper`.
+- mjml_nif ignores these attributes: `owa` on `mjml`, `font-weight` on `mj-accordion-title`, `id` on `mj-body`,
+  `title` on `mj-button`, `border-radius` on `mj-hero`, `border-top`, `border-bottom` and `sizes` on `mj-image`,
+  `position` on `mj-raw`, `gutter` and `text-padding` on `mj-section`, `border` and `table-layout` on `mj-social`,
+  `border`, `icon-position`, `sizes` and `srcset` on `mj-social-element`, `border` and its sides on `mj-spacer`,
+  `font-weight` and `role` on `mj-table`, `background-color` on `mj-text`, and `gap`, `gutter` and `text-padding` on
+  `mj-wrapper`.
 - mjml_nif renders `full-width="false"` (or an empty value) on `mj-section` and `mj-wrapper` as full width, and
   `mj-hero`'s `mode="fluid-height"` like `mode="fixed-height"`.
 - mjml_nif doesn't inline `mj-style inline="inline"` CSS, and `mj-html-attributes` isn't supported.
@@ -102,7 +104,11 @@ check those too, turn on runtime validation in dev and test:
 config :mjml_eex, runtime_validation: :raise
 ```
 
-With `:raise`, rendering raises on an invalid value. With `:warn`, it logs a warning instead. It's off by default.
+With `:raise`, rendering raises on an invalid value. With `:warn`, it logs a warning instead. It's off by default, or
+with `false`.
+
+It checks the `unknown_attribute` and `invalid_value` rules, at the template's levels for them: a rule set to `:warn`
+only logs, and one set to `:skip` isn't checked.
 
 ## Validating MJML strings
 

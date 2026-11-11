@@ -44,7 +44,8 @@ Calls compile to plain function calls, so components cost nothing extra when an 
 - `:required`: the attribute must be given.
 - `:default`: the value when the attribute isn't given.
 - `:values`: the values the attribute accepts.
-- `:doc`: documentation for the attribute.
+- `:doc`: documentation for the attribute. It's kept with the declaration, but unlike `Phoenix.Component`, it isn't
+  added to the function's documentation, so describe the attributes in its `@doc` too.
 
 ```elixir
 attr :title, :string, required: true

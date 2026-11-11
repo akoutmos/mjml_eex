@@ -52,7 +52,7 @@ defmodule MjmlEEx.MixProject do
       # shows the README from the package, so the images it references are packaged too.
       files:
         ~w(lib images guides/images/logo.svg guides/images/templates/gallery.jpg) ++
-          ~w(mix.exs .formatter.exs README.md LICENSE CHANGELOG.md VERSION),
+          ~w(mix.exs .formatter.exs README.md LICENSE NOTICE CHANGELOG.md VERSION),
       licenses: ["MIT"],
       maintainers: ["Alex Koutmos"],
       links: %{

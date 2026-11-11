@@ -51,7 +51,7 @@ defmodule MjmlEEx.Component do
   `render_slot/2`, and use `:let` at the call site to receive the argument given to it.
 
   Template modules (`use MjmlEEx`) support `attr` and `slot` too, for `render/1`. Their
-  attributes are checked when the email is rendered with `to_html/1`.
+  attributes are checked when the email is rendered with `to_html/1` or `to_text/1`.
 
   ## Checking calls
 
@@ -90,8 +90,9 @@ defmodule MjmlEEx.Component do
   defmacro __using__(opts) do
     MjmlEEx.__reject_removed_options__(opts)
     opts = Keyword.validate!(opts, [:validation])
-    # Fail early on invalid settings
-    _ = MjmlEEx.Validator.levels(opts[:validation])
+    # Fail early on invalid settings. This also makes Mix compile the module again when
+    # `config :mjml_eex, validation: ...` changes.
+    _ = MjmlEEx.Validator.levels(opts[:validation], __CALLER__)
 
     quote do
       import MjmlEEx.Component
@@ -523,6 +524,26 @@ defmodule MjmlEEx.Component do
     end
   end
 
+  @caller {__MODULE__, :caller}
+
+  @doc false
+  # A component call in a user's template: while the component renders, its location is where
+  # runtime validation reports problems in MJML EEx's own components (see
+  # MjmlEEx.TagEngine.Runtime). Nested calls take its place until they return.
+  def __call__(fun, assigns, call_site) when is_function(fun, 1) do
+    previous = Process.get(@caller)
+    Process.put(@caller, call_site)
+
+    try do
+      __call__(fun, assigns)
+    after
+      if previous, do: Process.put(@caller, previous), else: Process.delete(@caller)
+    end
+  end
+
+  @doc false
+  def __caller__, do: Process.get(@caller)
+
   @doc false
   def __unmatched_let__!(pattern, value) do
     raise ArgumentError,
@@ -534,7 +555,7 @@ defmodule MjmlEEx.Component do
   @doc false
   # Checks a template module's assigns against its render/1 declarations. Raises with every
   # problem found.
-  def __check_assigns__(module, assigns) do
+  def __check_assigns__(module, assigns, fun \\ :to_html) do
     case module.__mjml_eex_components__() do
       %{render: %{attrs: attrs, slots: slots}} ->
         problems =
@@ -547,7 +568,7 @@ defmodule MjmlEEx.Component do
 
         if problems != [] do
           raise ArgumentError,
-                "invalid assigns for #{inspect(module)}.to_html/1:\n\n" <>
+                "invalid assigns for #{inspect(module)}.#{fun}/1:\n\n" <>
                   Enum.map_join(problems, "\n", &("  * " <> &1))
         end
 

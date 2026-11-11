@@ -88,10 +88,22 @@ defmodule MjmlEEx.CoreComponentsTest do
       refute mjml =~ "mj-navbar"
     end
 
+    test "checks logo_width as the logo's width" do
+      assigns = %{}
+
+      assert_raise ArgumentError, ~r/header\/1's logo_width: Attribute width has invalid value: big/, fn ->
+        ~MJML|<.header logo="https://example.com/logo.png" title="Acme" logo_width="big" />|
+      end
+    end
+
     test "uses the title as the logo's alternative text, unless logo_alt is given" do
       assigns = %{}
       mjml = in_body(~MJML|<.header logo="https://example.com/logo.png" title="Acme" />|)
       assert mjml =~ ~s(<mj-image src="https://example.com/logo.png" alt="Acme")
+
+      assert_raise ArgumentError, ~r/header\/1 needs a logo_alt \(or a title\)/, fn ->
+        ~MJML|<.header logo="https://example.com/logo.png" href="https://example.com" />|
+      end
     end
 
     test "renders a title, linked when there's an href" do
@@ -109,7 +121,7 @@ defmodule MjmlEEx.CoreComponentsTest do
 
       mjml =
         in_body(~MJML"""
-        <.header logo="https://example.com/logo.png" padding="8px 0">
+        <.header logo="https://example.com/logo.png" logo_alt="Acme" padding="8px 0">
           <:link href="https://example.com/blog">Blog</:link>
           <:link href="https://example.com/help">Help</:link>
         </.header>
@@ -459,6 +471,24 @@ defmodule MjmlEEx.CoreComponentsTest do
     end
   end
 
+  describe "spacer/1" do
+    test "renders 24px of space by default, and checks the height like an mj-spacer's" do
+      assigns = %{}
+      assert in_column(~MJML|<.spacer />|) =~ ~s(<mj-spacer height="24px" />)
+      assert in_column(~MJML|<.spacer height="40px" />|) =~ ~s(<mj-spacer height="40px" />)
+
+      assert_raise CompileError, ~r/Attribute height has invalid value: big .*\(for <.spacer>\)/, fn ->
+        Code.compile_string("""
+        defmodule MjmlEEx.CoreComponentsTest.BadSpacer do
+          use MjmlEEx
+          import MjmlEEx.CoreComponents
+          def render(assigns), do: ~MJML'<.spacer height="big" />'
+        end
+        """)
+      end
+    end
+  end
+
   describe "social/1" do
     test "renders muted icons" do
       assigns = %{}
@@ -544,6 +574,14 @@ defmodule MjmlEEx.CoreComponentsTest do
       assert mjml =~ ".mjml-eex-hero-dark a { color: #FFFFFF; text-decoration: underline; }"
       refute mjml =~ "mjml-eex-hero-surface"
       assert MjmlEEx.to_html(mjml) =~ ~s(class="mjml-eex-hero-primary promo")
+    end
+
+    test "keeps a background image's URL inside its CSS url('...')" do
+      assigns = %{image: "https://acme.com/o'brien.png"}
+      html = MjmlEEx.to_html(in_body(~MJML|<.hero background_image={@image}><.text>Sale</.text></.hero>|))
+
+      assert html =~ "url('https://acme.com/o%27brien.png')"
+      refute html =~ "o'brien"
     end
 
     test "renders a dark hero with a background image" do

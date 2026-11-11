@@ -77,15 +77,25 @@ defmodule MjmlEEx.Validator do
   Resolves the level of every rule from the `config :mjml_eex, validation: ...` application
   config and the given override (a template's `validation:` option or `validate/2`'s). Each is
   either a level for every rule, or a keyword list of rules and levels. Rules default to `:error`.
+
+  When `env` is the env of a module being compiled, the config is read with
+  `Application.compile_env/4`, so that Mix compiles the module again when the config changes.
   """
-  @spec levels(term()) :: %{atom() => :error | :warn | :skip}
-  def levels(override \\ nil) do
+  @spec levels(term(), Macro.Env.t() | nil) :: %{atom() => :error | :warn | :skip}
+  def levels(override \\ nil, env \\ nil) do
     defaults = Map.new(@rules, &{&1, :error})
 
-    [Application.get_env(:mjml_eex, :validation), override]
+    [config(env), override]
     |> Enum.reject(&is_nil/1)
     |> Enum.reduce(defaults, &apply_levels/2)
   end
+
+  # compile_env/4 only uses the env to record which module read the config, and it doesn't
+  # accept envs from inside functions, such as a ~MJML sigil's
+  defp config(%Macro.Env{module: module} = env) when is_atom(module) and not is_nil(module),
+    do: Application.compile_env(%{env | function: nil}, :mjml_eex, :validation, nil)
+
+  defp config(_env), do: Application.get_env(:mjml_eex, :validation)
 
   defp apply_levels(level, levels) when level in @levels, do: Map.new(levels, fn {rule, _} -> {rule, level} end)
 
@@ -827,6 +837,22 @@ defmodule MjmlEEx.Validator do
   """
   @spec check_attribute(String.t(), String.t(), String.t()) :: ValidationError.t() | nil
   def check_attribute(tag, name, value) do
+    check_attribute_value(tag, name, value) || check_unsupported_value(tag, name, value)
+  end
+
+  # An attribute or value mjml_nif ignores or handles differently from MJML (the
+  # :unsupported_value rule), such as full-width="false"
+  defp check_unsupported_value(tag, name, value) do
+    Enum.find_value(Overlay.attribute_value_warnings(), fn
+      {^tag, ^name, expected, reason} when expected in [:any, value] ->
+        %ValidationError{rule: :unsupported_value, severity: :error, tag: tag, attribute: name, message: reason}
+
+      _warning ->
+        nil
+    end)
+  end
+
+  defp check_attribute_value(tag, name, value) do
     case attribute_spec(tag) do
       {allowed, types} ->
         cond do

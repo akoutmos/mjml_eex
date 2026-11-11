@@ -14,6 +14,11 @@ defmodule MjmlEEx.DependenciesTest do
         when kind in [:remote_function, :remote_macro],
         do: report(env.module, module)
 
+    def trace({:compile_env, app, path, _return}, env) do
+      if pid = :persistent_term.get(__MODULE__, nil), do: send(pid, {:compile_env, env.module, app, path})
+      :ok
+    end
+
     def trace(_event, _env), do: :ok
 
     defp report(from, to) do
@@ -56,6 +61,29 @@ defmodule MjmlEEx.DependenciesTest do
 
     refute_received {:compile_time, MjmlEEx.DependenciesTest.WithLayout, MjmlEEx.DependenciesTest.Layout}
     assert module.to_html(%{}) =~ "Hi"
+  end
+
+  test "emails and components are compiled again when the validation config changes" do
+    compile_traced(
+      """
+      defmodule MjmlEEx.DependenciesTest.ConfigEmail do
+        use MjmlEEx
+
+        def render(assigns), do: ~MJML"<mj-text>Hi</mj-text>"
+      end
+
+      defmodule MjmlEEx.DependenciesTest.ConfigComponents do
+        use MjmlEEx.Component
+
+        def box(assigns), do: ~MJML"<mj-text>Box</mj-text>"
+      end
+      """,
+      "config.ex"
+    )
+
+    # Mix records these reads, and compiles the modules again when the config changes
+    assert_received {:compile_env, MjmlEEx.DependenciesTest.ConfigEmail, :mjml_eex, [:validation]}
+    assert_received {:compile_env, MjmlEEx.DependenciesTest.ConfigComponents, :mjml_eex, [:validation]}
   end
 
   test "the components a template file calls are runtime dependencies" do

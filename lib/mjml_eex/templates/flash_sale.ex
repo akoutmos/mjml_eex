@@ -50,7 +50,8 @@ defmodule MjmlEEx.Templates.FlashSale do
       URLs, such as `[instagram: "https://instagram.com/acme"]`.
     * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
       language of the template's text.
-    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
+    * `:dir` - the direction of the text: `"ltr"`, `"rtl"` or `"auto"` (the default). The
+      template's layout stays left to right.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -80,9 +81,10 @@ defmodule MjmlEEx.Templates.FlashSale do
   attr :product_url, :string, default: nil
   attr :social, :list, default: []
   attr :lang, :string, default: "en"
-  attr :dir, :string, default: nil
+  attr :dir, :string, default: "auto", values: ~w(ltr rtl auto)
 
   def render(assigns) do
+    require_text!(assigns, [:unsubscribe_url, :address])
     assigns = assign(assigns, :theme, MjmlEEx.Theme.current())
 
     ~MJML"""
@@ -151,7 +153,7 @@ defmodule MjmlEEx.Templates.FlashSale do
         <span :if={@terms}>{@terms}<br /><br /></span>
         {@address}
         <:link href={@unsubscribe_url}>Unsubscribe</:link>
-        <:social :for={{name, href} <- @social} name={to_string(name)} href={href} />
+        <:social :for={{name, href} <- pairs!(@social, :social)} name={to_string(name)} href={href} />
       </.footer>
     </.email>
     """
@@ -160,5 +162,30 @@ defmodule MjmlEEx.Templates.FlashSale do
   defp code_style(theme) do
     "display: inline-block; padding: 10px 20px; border: 2px dashed #{theme.surface}; " <>
       "border-radius: #{theme.button_radius}; font-size: 15px; line-height: 24px; color: #{theme.surface};"
+  end
+
+  # Marketing emails need a working unsubscribe link and a postal address, and required attrs
+  # still accept nil
+  defp require_text!(assigns, keys) do
+    for key <- keys, not is_binary(assigns[key]) or String.trim(assigns[key]) == "" do
+      raise ArgumentError, "#{inspect(__MODULE__)} requires a non-blank #{inspect(key)}, got: #{inspect(assigns[key])}"
+    end
+  end
+
+  # A :for with a {_, _} pattern would leave out the elements that don't match it
+  defp pairs!(nil, _assign), do: []
+
+  defp pairs!(list, assign) do
+    Enum.each(list, fn
+      {_, _} ->
+        :ok
+
+      element ->
+        raise ArgumentError,
+              "the #{inspect(assign)} assign of #{inspect(__MODULE__)} must be a list of 2-element tuples, such as " <>
+                "[x: \"https://x.com/acme\"], got: #{inspect(element)}"
+    end)
+
+    list
   end
 end

@@ -185,7 +185,12 @@ ready for your content and your theme:
   MJML's component definitions
 - The test corpus in `test/fixtures/corpus/` is vendored from
   [MRML](https://github.com/jdrouet/mrml) (MIT license)
-- The template tokenizer and parser (`lib/mjml_eex/tag_engine/tokenizer.ex` and
-  `parser.ex`) are forked from
-  [Phoenix LiveView](https://github.com/phoenixframework/phoenix_live_view)'s
-  tag engine (MIT license, Copyright (c) 2018 Chris McCord)
+- The template tokenizer, parser and compiler (`lib/mjml_eex/tag_engine/`) and
+  the formatter (`lib/mjml_eex/formatter.ex` and `lib/mjml_eex/formatter/`)
+  are forked from [Phoenix LiveView](https://github.com/phoenixframework/phoenix_live_view)'s
+  tag engine and HTML formatter (MIT license, Copyright (c) 2018 Chris McCord)
+- The HTML entities that plain-text emails decode are generated from the
+  [HTML Living Standard](https://html.spec.whatwg.org/) (CC BY 4.0, Copyright (c)
+  WHATWG)
+- The licenses of all of these are in
+  [NOTICE](https://github.com/akoutmos/mjml_eex/blob/master/NOTICE)

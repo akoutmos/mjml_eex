@@ -32,17 +32,20 @@ defmodule MjmlEEx.Theme do
     * `:primary` - buttons, links and accents. Defaults to `"#4F46E5"`.
     * `:primary_text` - text on `:primary`, such as button labels. Defaults to `"#FFFFFF"`.
     * `:background` - the email's background, around the cards. Defaults to `"#F4F4F5"`.
-    * `:surface` - cards. Defaults to `"#FFFFFF"`.
-    * `:subtle` - quiet fills inside cards: secondary buttons and codes. Defaults to `"#F4F4F5"`.
+    * `:surface` - cards, and the text of solid badges and danger buttons. Defaults to
+      `"#FFFFFF"`.
+    * `:subtle` - quiet fills inside cards: secondary buttons, codes, blockquotes and neutral
+      badges. Defaults to `"#F4F4F5"`.
     * `:text` - body text. Defaults to `"#3F3F46"`.
     * `:heading` - headings and emphasized text. Defaults to `"#18181B"`.
     * `:muted` - secondary text, such as table headers and footers. Defaults to `"#6B6B74"`,
       which has enough contrast on `:background` for small text (WCAG AA).
-    * `:border` - dividers and table rules. Defaults to `"#E4E4E7"`.
-    * `:info`, `:success`, `:warning` and `:danger` - the titles of callouts, and the danger
-      button. Default to `"#1D4ED8"`, `"#15803D"`, `"#B45309"` and `"#B91C1C"`.
+    * `:border` - dividers, table rules, outline buttons and accordions. Defaults to
+      `"#E4E4E7"`.
+    * `:info`, `:success`, `:warning` and `:danger` - the titles of callouts, badges, and the
+      danger button. Default to `"#1D4ED8"`, `"#15803D"`, `"#B45309"` and `"#B91C1C"`.
     * `:info_background`, `:success_background`, `:warning_background` and
-      `:danger_background` - the backgrounds of callouts. Default to `"#EFF6FF"`,
+      `:danger_background` - the backgrounds of callouts and badges. Default to `"#EFF6FF"`,
       `"#F0FDF4"`, `"#FFFBEB"` and `"#FEF2F2"`.
 
   Typography:
@@ -50,14 +53,15 @@ defmodule MjmlEEx.Theme do
     * `:font_family` - defaults to a system font stack.
     * `:heading_font_family` - defaults to `:font_family`.
     * `:monospace_font_family` - for codes. Defaults to a monospace font stack.
-    * `:font_size` - body text. Defaults to `"16px"`.
-    * `:line_height` - body text. Defaults to `"24px"`.
+    * `:font_size` - body text, in px. Defaults to `"16px"`.
+    * `:line_height` - body text, in px, % or without a unit (`"1.5"`). Defaults to `"24px"`.
 
   Shapes and sizes:
 
-    * `:radius` - the corners of cards. Defaults to `"8px"`.
-    * `:button_radius` - the corners of buttons, callouts and codes. Defaults to `"6px"`.
-    * `:width` - the width of the email. Defaults to `"600px"`.
+    * `:radius` - the corners of cards and heroes. Defaults to `"8px"`.
+    * `:button_radius` - the corners of buttons, callouts, codes and blockquotes. Defaults to
+      `"6px"`.
+    * `:width` - the width of the email, in px. Defaults to `"600px"`.
 
   To use a web font, add an `mj-font` for it with the `:head` slot of
   `MjmlEEx.CoreComponents.email/1`, and put it first in `:font_family`.
@@ -175,8 +179,8 @@ defmodule MjmlEEx.Theme do
   def new(tokens \\ []), do: merge(%__MODULE__{}, tokens)
 
   @doc """
-  Returns `theme` with the given tokens changed. Raises `ArgumentError` for unknown tokens
-  and invalid values.
+  Returns `theme` with the given tokens changed, or `tokens` itself when it's a whole
+  `%MjmlEEx.Theme{}`. Raises `ArgumentError` for unknown tokens and invalid values.
   """
   @spec merge(t(), t() | map() | keyword()) :: t()
   def merge(%__MODULE__{} = theme, tokens) when is_map(tokens) or is_list(tokens) do
@@ -301,6 +305,9 @@ defmodule MjmlEEx.Theme do
   The theme stays until it's changed, so in processes that render emails for several brands,
   use `with_theme/2` instead.
 
+  A whole `%MjmlEEx.Theme{}` (from `new/1`, for example) is used as it is, instead of on top
+  of the configured theme.
+
   Like `new/1`, it raises `ArgumentError` for invalid tokens. If they come from your users,
   check them with `validate/1` when they're saved.
   """
@@ -317,8 +324,8 @@ defmodule MjmlEEx.Theme do
 
   @doc """
   Calls `fun` with a theme for the emails it renders, then puts back the theme from before,
-  even if `fun` raises. Like `put/1`, the tokens are applied on top of the configured theme.
-  Returns what `fun` returns.
+  even if `fun` raises. Like `put/1`, the tokens are applied on top of the configured theme,
+  and a whole `%MjmlEEx.Theme{}` is used as it is. Returns what `fun` returns.
 
   Use it in processes that render emails for several brands one after the other, such as a
   GenServer or a job worker, so that one email's theme doesn't stay for the next, like

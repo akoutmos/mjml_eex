@@ -78,11 +78,12 @@ since the email is read far from your app.
 ### Theming
 
 The templates use the [theme](core_components.md#theming), so they match your other emails: set your colors and fonts
-in your config, or set a theme for one email with `MjmlEEx.Theme.put/1`:
+in your config, or set a theme for one email with `MjmlEEx.Theme.with_theme/2`:
 
 ```elixir
-MjmlEEx.Theme.put(primary: account.brand_color)
-MjmlEEx.Templates.Invoice.to_html(assigns)
+MjmlEEx.Theme.with_theme([primary: account.brand_color], fn ->
+  MjmlEEx.Templates.Invoice.to_html(assigns)
+end)
 ```
 
 ### Marketing emails
@@ -107,7 +108,9 @@ has to accept one without a login or a confirmation page.
 
 Every template takes a `:preview`, the text that inboxes show after the subject, and has a default for it from your
 content. Templates declare their language as English (`lang="en"`), the language of their text, for screen readers.
-If you pass content in another language, also pass `:lang` (and `:dir`, such as `"rtl"` for Arabic or Hebrew).
+If you pass content in another language, also pass `:lang` (and `:dir`, such as `"rtl"` for Arabic or Hebrew). `:dir`
+sets the direction of the text, but the templates' layout stays left to right: for a right-to-left layout, copy the
+template and change its alignment.
 
 ## Copying a template
 

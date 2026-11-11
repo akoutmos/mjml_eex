@@ -283,6 +283,23 @@ defmodule MjmlEEx.ComponentTest do
       assert [{_module, _}] = compile_call(Spread, "<Components.cta {@attrs}>Go</Components.cta>")
     end
 
+    test "report attributes passed through a :global that mjml_nif ignores or handles differently" do
+      assert_raise CompileError, ~r/mjml_nif ignores the title attribute of mj-button \(for <Components.cta>\)/, fn ->
+        compile_call(IgnoredGlobal, ~S|<Components.cta href="/" title="Go">Go</Components.cta>|)
+      end
+
+      assert_raise CompileError, ~r/mjml_nif treats full-width="false" as full width/, fn ->
+        compile_call(FullWidthGlobal, ~S|<Components.section full-width="false" />|)
+      end
+
+      assert [{_module, _}] =
+               compile_call(
+                 IgnoredGlobalSkipped,
+                 ~S|<Components.cta href="/" title="Go">Go</Components.cta>|,
+                 ", validation: [unsupported_value: :skip]"
+               )
+    end
+
     test "follow the validation levels" do
       assert [{_module, _}] =
                compile_call(

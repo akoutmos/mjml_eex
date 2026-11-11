@@ -39,12 +39,14 @@ defmodule MjmlEEx do
   ```
 
   `to_html/1` and `to_text/1` are overridable. Define them in the module to change the
-  assigns, for example, and call `super/1` to render:
+  assigns, for example, and call `super/1` to render. Override both, so that the HTML and the
+  plain text get the same assigns:
 
   ```elixir
-  def to_html(assigns) do
-    assigns |> Map.new() |> Map.put_new(:year, Date.utc_today().year) |> super()
-  end
+  def to_html(assigns), do: assigns |> with_year() |> super()
+  def to_text(assigns), do: assigns |> with_year() |> super()
+
+  defp with_year(assigns), do: assigns |> Map.new() |> Map.put_new(:year, Date.utc_today().year)
   ```
 
   ## Template syntax
@@ -86,7 +88,7 @@ defmodule MjmlEEx do
   Attribute values that come from expressions (`color={@color}`) can only be checked when the
   template is rendered. Turn that on in dev and test with
   `config :mjml_eex, runtime_validation: :raise` (or `:warn` to log instead). It follows the
-  template's levels for the `unknown_attribute` and `invalid_value` rules.
+  template's levels for the `unknown_attribute`, `invalid_value` and `unsupported_value` rules.
 
   ## Options
 
@@ -103,7 +105,7 @@ defmodule MjmlEEx do
   - `:compiler_opts` - options for the MJML compiler, merged on top of the
     `config :mjml_eex, compiler_opts: [...]` application config (see `compiler_opts/1`). They're
     evaluated each time `to_html/1` runs, so runtime values such as
-    `include_path: Application.app_dir(:my_app, "priv/emails")` work. See
+    `social_icon_path: Application.fetch_env!(:my_app, :email_icons_url)` work. See
     `MjmlEEx.Compilers.Rust` for the supported options.
   """
 
@@ -126,8 +128,9 @@ defmodule MjmlEEx do
     validation = Keyword.get(opts, :validation)
     layout = opts |> Keyword.get(:layout) |> expand_layout(__CALLER__)
 
-    # Fail early on invalid settings
-    _ = Validator.levels(validation)
+    # Fail early on invalid settings. This also makes Mix compile the module again when
+    # `config :mjml_eex, validation: ...` changes.
+    _ = Validator.levels(validation, __CALLER__)
 
     quote do
       import MjmlEEx, only: [sigil_MJML: 2]
@@ -533,8 +536,14 @@ defmodule MjmlEEx do
   @doc false
   def __to_text__(module, assigns) do
     assigns = Map.new(assigns)
-    Component.__check_assigns__(module, assigns)
-    assigns |> module.render() |> to_text()
+    Component.__check_assigns__(module, assigns, :to_text)
+
+    try do
+      assigns |> module.render() |> to_text()
+    rescue
+      # The location is in the rendered MJML, not in a file
+      error in ParseError -> reraise %{error | file: "the MJML rendered by #{inspect(module)}"}, __STACKTRACE__
+    end
   end
 
   @doc false
@@ -567,25 +576,10 @@ defmodule MjmlEEx do
     end
   end
 
-  @doc """
-  Parses a plain MJML string into a tree.
-
-  Plain MJML has no Elixir in it: `{` and `<%` are ordinary text. The tree uses the
-  same node format as the template engine (`{:block, :tag, name, attrs, children, meta, close_meta}`,
-  `{:self_close, :tag, name, attrs, meta}` and `{:text, text, meta}`); it is not a stable API
-  yet.
-
-  ## Options
-
-  - `:file` - the file name to use in errors. Defaults to `"nofile"`.
-
-  ## Examples
-
-      iex> {:ok, [{:block, :tag, "mjml", [], _children, _meta, _close}]} =
-      ...>   MjmlEEx.parse("<mjml><mj-body></mj-body></mjml>")
-
-      iex> {:error, %MjmlEEx.ParseError{line: 1}} = MjmlEEx.parse("<mjml><mj-body></mjml>")
-  """
+  @doc false
+  # Parses a plain MJML string into the template engine's tree, in which `{` and `<%` are
+  # ordinary text. The tree isn't a stable format, so this isn't public. Options: `:file`, the
+  # file name to use in errors.
   @spec parse(mjml :: String.t(), opts :: keyword()) :: {:ok, [tuple()]} | {:error, ParseError.t()}
   def parse(mjml, opts \\ []) when is_binary(mjml) do
     {:ok, parse!(mjml, opts)}
@@ -593,9 +587,8 @@ defmodule MjmlEEx do
     error in ParseError -> {:error, error}
   end
 
-  @doc """
-  Same as `parse/2`, but raises `MjmlEEx.ParseError` if the MJML can't be parsed.
-  """
+  @doc false
+  # Same as parse/2, but raises MjmlEEx.ParseError if the MJML can't be parsed
   @spec parse!(mjml :: String.t(), opts :: keyword()) :: [tuple()]
   def parse!(mjml, opts \\ []) when is_binary(mjml) do
     file = Keyword.get(opts, :file, "nofile")

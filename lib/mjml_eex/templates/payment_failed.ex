@@ -31,10 +31,14 @@ defmodule MjmlEEx.Templates.PaymentFailed do
     * `:retry_on` - when you'll try to charge the payment method again.
     * `:pay_by` - the date to update the payment details by, to keep the subscription.
     * `:invoice_url` - the URL of the unpaid invoice.
+    * `:preview` - the preview text. Defaults to a sentence with the amount.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:support_url` - the URL to contact you with questions about billing.
     * `:address` - your company's address, for the footer.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -55,10 +59,13 @@ defmodule MjmlEEx.Templates.PaymentFailed do
   attr :retry_on, :string, default: nil
   attr :pay_by, :string, default: nil
   attr :invoice_url, :string, default: nil
+  attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     assigns =
@@ -67,7 +74,9 @@ defmodule MjmlEEx.Templates.PaymentFailed do
     ~MJML"""
     <.email
       title="Your payment didn't go through"
-      preview={"We couldn't process your payment of #{@amount}. Update your payment details to keep your subscription."}
+      preview={@preview || "We couldn't process your payment of #{@amount}. Update your payment details to keep your subscription."}
+      lang={@lang}
+      dir={@dir}
     >
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.card padding="32px 0">

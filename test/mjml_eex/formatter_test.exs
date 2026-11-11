@@ -230,6 +230,13 @@ defmodule MjmlEEx.FormatterTest do
   end
 
   describe "regressions" do
+    test "a leading byte order mark is removed without shifting the content kept as written" do
+      assert format("\uFEFF<mj-column><mj-text>hello</mj-text></mj-column>") ==
+               "<mj-column>\n  <mj-text>hello</mj-text>\n</mj-column>\n"
+
+      assert format("\uFEFF<mj-text>hello {@x}</mj-text>\r\n") == "<mj-text>hello {@x}</mj-text>\n"
+    end
+
     test "EEx in a comment that follows another comment is kept, since {...} isn't interpolated in comments" do
       for source <- [
             "<mj-column>\n  <!-- a -->\n  <!-- <%= @x %> -->\n</mj-column>\n",

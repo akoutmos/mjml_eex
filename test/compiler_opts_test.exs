@@ -9,7 +9,7 @@ defmodule CompilerOptsTest do
       compiler_opts: [
         keep_comments: false,
         social_icon_path: "https://icons.example.com/",
-        fonts: %{"Custom Font" => "https://fonts.example.com/custom-font.css"}
+        fonts: %{"Custom Font": "https://fonts.example.com/custom-font.css"}
       ]
   end
 
@@ -114,7 +114,7 @@ defmodule CompilerOptsTest do
       refute RuntimeOptionsTemplate.to_html(name: "Alex") =~ "MJML_EEX_TEST_COMMENT"
     end
 
-    test "should accept fonts with atom keys or as a keyword list" do
+    test "should accept fonts as a map or a keyword list" do
       assert {:ok, html} = Rust.compile(font_template(), fonts: %{"Custom Font": "https://fonts.example.com/a.css"})
       assert html =~ "https://fonts.example.com/a.css"
 
@@ -125,6 +125,16 @@ defmodule CompilerOptsTest do
     test "should raise for invalid fonts" do
       assert_raise ArgumentError, ~r/:fonts compiler option must be a map or keyword list/, fn ->
         Rust.compile(font_template(), fonts: "https://fonts.example.com/a.css")
+      end
+    end
+
+    test "should raise for font names that are not atoms" do
+      assert_raise ArgumentError, ~r/font names in the :fonts compiler option must be atoms.*got: "Custom Font"/, fn ->
+        Rust.compile(font_template(), fonts: %{"Custom Font" => "https://fonts.example.com/a.css"})
+      end
+
+      assert_raise ArgumentError, ~r/must be atoms.*got: 1/, fn ->
+        Rust.compile(font_template(), fonts: [{1, "https://fonts.example.com/a.css"}])
       end
     end
 

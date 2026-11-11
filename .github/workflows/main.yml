@@ -40,6 +40,8 @@ jobs:
           restore-keys: ${{ runner.os }}-plt-v3-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
       - name: Mix Formatter
         run: mix format --check-formatted
+      - name: Check for unused dependencies in mix.lock
+        run: mix deps.unlock --check-unused
       - name: Check for compiler warnings
         run: mix compile --warnings-as-errors
       - name: Credo strict checks

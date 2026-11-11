@@ -17,7 +17,8 @@ defmodule MjmlEEx.Templates.Webinar do
     speakers: [%{name: "Maya Patel", role: "Head of Product, Acme"}],
     register_url: "https://acme.com/webinars/workflows",
     recording: true,
-    unsubscribe_url: "https://acme.com/unsubscribe"
+    unsubscribe_url: "https://acme.com/unsubscribe",
+    address: "Acme Inc., 1 Market St, San Francisco"
   )
   ```
 
@@ -30,6 +31,7 @@ defmodule MjmlEEx.Templates.Webinar do
     * `:description` (required) - a paragraph about the webinar.
     * `:register_url` (required) - the URL of the registration page.
     * `:unsubscribe_url` (required) - the URL to unsubscribe, linked in the footer.
+    * `:address` (required) - your company's postal address, for the footer.
     * `:duration` - how long the webinar is, such as `"45 minutes"`.
     * `:label` - the text above the title. Defaults to `"Live webinar"`.
     * `:topics` - what attendees will learn, as a list of strings.
@@ -41,9 +43,11 @@ defmodule MjmlEEx.Templates.Webinar do
     * `:preview` - the preview text. Defaults to the date and title.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
-    * `:address` - your company's address, for the footer.
     * `:social` - social links for the footer, as a keyword list of `mj-social` names and
       URLs, such as `[linkedin: "https://linkedin.com/company/acme"]`.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -61,6 +65,7 @@ defmodule MjmlEEx.Templates.Webinar do
   attr :description, :string, required: true
   attr :register_url, :string, required: true
   attr :unsubscribe_url, :string, required: true
+  attr :address, :string, required: true
   attr :duration, :string, default: nil
   attr :label, :string, default: "Live webinar"
   attr :topics, :list, default: []
@@ -70,14 +75,15 @@ defmodule MjmlEEx.Templates.Webinar do
   attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
-  attr :address, :string, default: nil
   attr :social, :list, default: []
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     assigns = assign(assigns, :theme, MjmlEEx.Theme.current())
 
     ~MJML"""
-    <.email title={@title} preview={@preview || "Join us live on #{@date}: #{@title}"}>
+    <.email title={@title} preview={@preview || "Join us live on #{@date}: #{@title}"} lang={@lang} dir={@dir}>
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.hero padding="40px 0 32px">
         <.text variant="eyebrow">{@label}</.text>

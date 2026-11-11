@@ -7,6 +7,8 @@ defmodule MjmlEExTest do
   alias MjmlEEx.Telemetry
   alias MjmlEEx.Test.Emails.Welcome
 
+  doctest MjmlEEx
+
   # 1.0 twins of the 0.13 template tests. The templates still use EEx tags, which 1.0 keeps.
 
   defmodule BasicTemplate do
@@ -117,11 +119,44 @@ defmodule MjmlEExTest do
     end
   end
 
+  describe "overriding to_html/1 and to_text/1" do
+    defmodule OverridingTemplate do
+      use MjmlEEx
+
+      def render(assigns) do
+        ~MJML"<mjml><mj-body><mj-section><mj-column><mj-text>{@greeting} {@name}</mj-text></mj-column></mj-section></mj-body></mjml>"
+      end
+
+      def to_html(assigns), do: assigns |> Map.new() |> Map.put_new(:greeting, "Hello") |> super()
+      def to_text(assigns), do: "Text: " <> super(Map.put_new(Map.new(assigns), :greeting, "Hi"))
+    end
+
+    test "can call super" do
+      assert OverridingTemplate.to_html(name: "Alex") =~ "Hello Alex"
+      assert OverridingTemplate.to_html(name: "Alex", greeting: "Hey") =~ "Hey Alex"
+      assert OverridingTemplate.to_text(name: "Alex") == "Text: Hi Alex\n"
+    end
+  end
+
   describe "InvalidTemplate" do
     test "raises when mjml_nif can't compile the MJML" do
-      assert_raise RuntimeError,
-                   ~r/Failed to compile MJML template: "unexpected element in root template at position/,
-                   fn -> InvalidTemplate.to_html(call_to_action_text: "Hi") end
+      error =
+        assert_raise MjmlEEx.CompileError,
+                     ~r/^couldn't compile the MJML of MjmlEExTest.InvalidTemplate to HTML: unexpected element in root template at position/,
+                     fn -> InvalidTemplate.to_html(call_to_action_text: "Hi") end
+
+      assert error.module == InvalidTemplate
+      assert error.reason =~ "unexpected element in root template"
+    end
+
+    test "MjmlEEx.to_html/2 raises without a module" do
+      error =
+        assert_raise MjmlEEx.CompileError, ~r/^couldn't compile the MJML to HTML: /, fn ->
+          MjmlEEx.to_html("<mjml><mj-body></mjml>")
+        end
+
+      assert error.module == nil
+      assert is_binary(error.reason)
     end
   end
 
@@ -227,9 +262,17 @@ defmodule MjmlEExTest do
   end
 
   describe "errors" do
-    test "use MjmlEEx rejects unknown options, such as 0.x's" do
-      assert_raise ArgumentError, ~r/unknown keys \[:mjml_template\]/, fn ->
+    test "use MjmlEEx rejects unknown options, and explains 0.x's" do
+      assert_raise ArgumentError, ~r/the :mjml_template option is now :template/, fn ->
         Code.compile_string("defmodule OldOptions do\n  use MjmlEEx, mjml_template: \"a.mjml.eex\"\nend")
+      end
+
+      assert_raise ArgumentError, ~r/the :mode option was removed/, fn ->
+        Code.compile_string("defmodule OldMode do\n  use MjmlEEx, mode: :compile\nend")
+      end
+
+      assert_raise ArgumentError, ~r/unknown keys \[:templat\]/, fn ->
+        Code.compile_string("defmodule Typo do\n  use MjmlEEx, templat: \"a.meex\"\nend")
       end
     end
 

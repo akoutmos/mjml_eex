@@ -14,8 +14,8 @@ defmodule MjmlEEx.Compilers.Rust do
 
   - `:social_icon_path` - The base URL used to generate the `mj-social` icon URLs.
 
-  - `:fonts` - A map (or keyword list) of font names to the URLs of their hosted CSS files. Font names may
-    be given as atoms or strings.
+  - `:fonts` - A map (or keyword list) of font names to the URLs of their hosted CSS files. Font names must
+    be atoms, such as `:"Noto Color Emoji"`.
 
   - `:include_path` - The directory that `mj-include` paths are resolved from. Relative paths are expanded
     from the current working directory, and symlinks are resolved.
@@ -58,15 +58,19 @@ defmodule MjmlEEx.Compilers.Rust do
   defp normalize_fonts(nil), do: nil
 
   defp normalize_fonts(fonts) when is_map(fonts) or is_list(fonts) do
-    Map.new(fonts, fn {name, url} -> {font_name_to_atom(name), to_string(url)} end)
+    Map.new(fonts, fn
+      {name, url} when is_atom(name) ->
+        {name, to_string(url)}
+
+      {name, _url} ->
+        raise ArgumentError,
+              ~s(font names in the :fonts compiler option must be atoms, such as :"Noto Color Emoji", got: #{inspect(name)})
+    end)
   end
 
   defp normalize_fonts(fonts) do
     raise ArgumentError, "the :fonts compiler option must be a map or keyword list, got: #{inspect(fonts)}"
   end
-
-  defp font_name_to_atom(name) when is_atom(name), do: name
-  defp font_name_to_atom(name) when is_binary(name), do: String.to_atom(name)
 
   defp include_loader(opts) do
     case {Keyword.get(opts, :include_loader), Keyword.get(opts, :include_path)} do

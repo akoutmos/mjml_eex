@@ -33,9 +33,13 @@ defmodule MjmlEEx.Templates.Welcome do
     * `:docs_url` - the URL of your guides or documentation.
     * `:support_url` - the URL to contact your team.
     * `:sign_off` - who the email is from, such as `"Maya Patel, CEO of Acme"`.
+    * `:preview` - the preview text. Defaults to `:intro`.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:address` - your company's address, for the footer.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -55,16 +59,19 @@ defmodule MjmlEEx.Templates.Welcome do
   attr :docs_url, :string, default: nil
   attr :support_url, :string, default: nil
   attr :sign_off, :string, default: nil
+  attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
   attr :address, :string, default: nil
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     assigns =
       assign(assigns, :intro, assigns.intro || "We're glad you're here. Here's everything you need to get started.")
 
     ~MJML"""
-    <.email title={"Welcome to #{@product_name}"} preview={@intro}>
+    <.email title={"Welcome to #{@product_name}"} preview={@preview || @intro} lang={@lang} dir={@dir}>
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.hero padding="40px 0 36px">
         <.heading font-size="34px" line-height="42px">

@@ -16,6 +16,8 @@ defmodule MjmlEEx.Test.Corpus do
       "compare/mj-body-width.mjml" => [{:invalid_value, "mj-body", "width"}],
       "compare/mj-column-mobile-width-pixel.mjml" => [{:unknown_attribute, "mj-column", "mobile-width"}],
       "compare/mj-hero-width.mjml" => [{:unknown_attribute, "mj-hero", "width"}],
+      # mrml ignores font-weight on mj-table: the HTML is the same without it
+      "compare/mj-table-text.mjml" => [{:unsupported_value, "mj-table", "font-weight"}],
       "compare/mj-spacer.mjml" => [
         {:unknown_attribute, "mj-spacer", "vertical-align"},
         {:unknown_attribute, "mj-spacer", "width"}

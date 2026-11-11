@@ -91,6 +91,17 @@ defmodule MjmlIncludeTest do
       assert :ok = MjmlEEx.validate(mjml)
     end
 
+    test "tells whole documents from partials by their root, not by their text" do
+      document = render(~s(<mjml><mj-body><mj-include path="full_with_attributes.mjml" /></mj-body></mjml>))
+      assert document =~ ~r/<mj-body>\s*<mj-section><mj-column><mj-text>Document with attributes/
+      refute document =~ ~s(<mjml lang="en">)
+      assert :ok = MjmlEEx.validate(document)
+
+      partial = render(~s(<mjml><mj-body><mj-include path="commented_partial.mjml" /></mj-body></mjml>))
+      assert partial =~ "<mj-text>Partial with a comment</mj-text>"
+      assert :ok = MjmlEEx.validate(partial)
+    end
+
     test ".meex partials are templates" do
       mjml =
         render(
@@ -147,6 +158,46 @@ defmodule MjmlIncludeTest do
         end
 
       assert Exception.message(error) =~ "test/test_includes/invalid.mjml:3:14: Attribute colour is illegal"
+    end
+
+    test "Elixir errors and warnings in included .meex files point into them" do
+      dir = Path.join(System.tmp_dir!(), "mjml_eex_include_#{System.unique_integer([:positive])}")
+      File.mkdir_p!(dir)
+      on_exit(fn -> File.rm_rf!(dir) end)
+
+      File.write!(Path.join(dir, "broken.meex"), "<mj-text>\n  Hi\n  {undefined_variable}\n</mj-text>\n")
+
+      File.write!(
+        Path.join(dir, "unused.meex"),
+        "<mj-column>\n  <mj-text :for={item <- @items}>x</mj-text>\n</mj-column>\n"
+      )
+
+      diagnostics = fn name, template ->
+        {_result, diagnostics} =
+          Code.with_diagnostics(fn ->
+            try do
+              Code.compile_string(
+                "defmodule MjmlIncludeTest.#{name} do\n  use MjmlEEx\n  def render(assigns), do: ~MJML'#{template}'\nend",
+                Path.join(dir, "email.ex")
+              )
+            rescue
+              CompileError -> :error
+            end
+          end)
+
+        for %{file: file, position: position, message: message} <- diagnostics,
+            do: {Path.basename(file), with({line, _column} <- position, do: line), message}
+      end
+
+      assert [{"broken.meex", 3, message}] =
+               diagnostics.(Broken, ~s(<mj-column><mj-include path="broken.meex" /></mj-column>))
+
+      assert message =~ ~s(undefined variable "undefined_variable")
+
+      assert [{"unused.meex", 2, message}] =
+               diagnostics.(Unused, ~s(<mj-section><mj-include path="unused.meex" /></mj-section>))
+
+      assert message =~ ~s(variable "item" is unused)
     end
   end
 

@@ -22,7 +22,8 @@ defmodule MjmlEEx.Templates.Newsletter do
       %{title: "Five reports every team should automate", summary: "...", url: "https://acme.com/blog/reports"}
     ],
     links: [%{title: "Acme 4.2 release notes", url: "https://acme.com/changelog", source: "Changelog"}],
-    unsubscribe_url: "https://acme.com/unsubscribe"
+    unsubscribe_url: "https://acme.com/unsubscribe",
+    address: "Acme Inc., 1 Market St, San Francisco"
   )
   ```
 
@@ -31,6 +32,7 @@ defmodule MjmlEEx.Templates.Newsletter do
     * `:product_name` (required) - your product's name, for the header.
     * `:title` (required) - the newsletter's name.
     * `:unsubscribe_url` (required) - the URL to unsubscribe, linked in the footer.
+    * `:address` (required) - your company's postal address, for the footer.
     * `:issue` - the issue's number or date, shown above the title.
     * `:intro` - a paragraph to start the issue with.
     * `:sign_off` - who the introduction is from, such as `"Maya, editor of the Dispatch"`.
@@ -44,9 +46,11 @@ defmodule MjmlEEx.Templates.Newsletter do
     * `:preview` - the preview text. Defaults to the featured story's title.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
-    * `:address` - your company's address, for the footer.
     * `:social` - social links for the footer, as a keyword list of `mj-social` names and
       URLs, such as `[linkedin: "https://linkedin.com/company/acme"]`.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -60,6 +64,7 @@ defmodule MjmlEEx.Templates.Newsletter do
   attr :product_name, :string, required: true
   attr :title, :string, required: true
   attr :unsubscribe_url, :string, required: true
+  attr :address, :string, required: true
   attr :issue, :string, default: nil
   attr :intro, :string, default: nil
   attr :sign_off, :string, default: nil
@@ -69,14 +74,15 @@ defmodule MjmlEEx.Templates.Newsletter do
   attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
-  attr :address, :string, default: nil
   attr :social, :list, default: []
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     assigns = assign(assigns, :theme, MjmlEEx.Theme.current())
 
     ~MJML"""
-    <.email title={@title} preview={@preview || (@featured && @featured.title)}>
+    <.email title={@title} preview={@preview || (@featured && @featured.title)} lang={@lang} dir={@dir}>
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <mj-wrapper background-color={@theme.surface} border-radius={@theme.radius} padding="32px 0 24px">
         <mj-section padding="0">

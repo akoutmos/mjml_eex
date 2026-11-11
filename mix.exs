@@ -48,8 +48,11 @@ defmodule MjmlEEx.MixProject do
   defp package do
     [
       name: "mjml_eex",
-      # .formatter.exs exports the formatter settings for `import_deps: [:mjml_eex]`
-      files: ~w(lib images mix.exs .formatter.exs README.md LICENSE CHANGELOG.md VERSION),
+      # .formatter.exs exports the formatter settings for `import_deps: [:mjml_eex]`. hex.pm
+      # shows the README from the package, so the images it references are packaged too.
+      files:
+        ~w(lib images guides/images/logo.svg guides/images/templates/gallery.jpg) ++
+          ~w(mix.exs .formatter.exs README.md LICENSE CHANGELOG.md VERSION),
       licenses: ["MIT"],
       maintainers: ["Alex Koutmos"],
       links: %{
@@ -78,6 +81,7 @@ defmodule MjmlEEx.MixProject do
         "guides/includes.md",
         "guides/validation.md",
         "guides/formatting.md",
+        "guides/testing.md",
         "guides/configuration.md",
         "guides/telemetry.md",
         "guides/migrating_from_0x.md",
@@ -107,7 +111,7 @@ defmodule MjmlEEx.MixProject do
           MjmlEEx.Templates.ProductLaunch,
           MjmlEEx.Templates.FlashSale
         ],
-        Errors: [MjmlEEx.ParseError, MjmlEEx.ValidationError],
+        Errors: [MjmlEEx.ParseError, MjmlEEx.ValidationError, MjmlEEx.CompileError],
         Formatting: [MjmlEEx.Formatter, MjmlEEx.Formatter.TagFormatter],
         Compilers: [MjmlEEx.Compiler, MjmlEEx.Compilers.Rust],
         Telemetry: [MjmlEEx.Telemetry]

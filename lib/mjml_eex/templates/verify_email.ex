@@ -21,10 +21,14 @@ defmodule MjmlEEx.Templates.VerifyEmail do
     * `:name` - the user's name, to greet them with.
     * `:email` - the address being confirmed, shown in the text.
     * `:expires_in` - how long the link works for. Defaults to `"24 hours"`.
+    * `:preview` - the preview text. Defaults to a sentence about confirming the email address.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:support_url` - the URL of your help page, linked in the footer.
     * `:address` - your company's address, for the footer.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -40,16 +44,21 @@ defmodule MjmlEEx.Templates.VerifyEmail do
   attr :name, :string, default: nil
   attr :email, :string, default: nil
   attr :expires_in, :string, default: "24 hours"
+  attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
   attr :support_url, :string, default: nil
   attr :address, :string, default: nil
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     ~MJML"""
     <.email
       title={"Confirm your email for #{@product_name}"}
-      preview={"Confirm your email address to finish setting up your #{@product_name} account."}
+      preview={@preview || "Confirm your email address to finish setting up your #{@product_name} account."}
+      lang={@lang}
+      dir={@dir}
     >
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.card padding="32px 0">

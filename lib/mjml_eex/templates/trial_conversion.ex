@@ -37,11 +37,15 @@ defmodule MjmlEEx.Templates.TrialConversion do
       `:label` keys. Three fit best.
     * `:features` - what the plan includes, as a list of strings.
     * `:contact_url` - the URL to contact your team with questions.
+    * `:preview` - the preview text. Defaults to a sentence about upgrading to `:plan`.
     * `:logo` - the URL of your logo. Without it, the header shows `:product_name`.
     * `:product_url` - the URL the logo links to.
     * `:support_url` - the URL of your help page, linked in the footer.
     * `:unsubscribe_url` - the URL to unsubscribe from these emails, linked in the footer.
     * `:address` - your company's address, for the footer.
+    * `:lang` - the language of the email, for screen readers. Defaults to `"en"`, the
+      language of the template's text.
+    * `:dir` - the direction of the text, `"ltr"` or `"rtl"`.
 
   To change the text or the layout, copy the template into your app (see
   [Prebuilt templates](prebuilt_templates.md)).
@@ -62,11 +66,14 @@ defmodule MjmlEEx.Templates.TrialConversion do
   attr :usage, :list, default: []
   attr :features, :list, default: []
   attr :contact_url, :string, default: nil
+  attr :preview, :string, default: nil
   attr :logo, :string, default: nil
   attr :product_url, :string, default: nil
   attr :support_url, :string, default: nil
   attr :unsubscribe_url, :string, default: nil
   attr :address, :string, default: nil
+  attr :lang, :string, default: "en"
+  attr :dir, :string, default: nil
 
   def render(assigns) do
     assigns = assign(assigns, :theme, MjmlEEx.Theme.current())
@@ -74,7 +81,9 @@ defmodule MjmlEEx.Templates.TrialConversion do
     ~MJML"""
     <.email
       title={"Your #{@product_name} trial ends on #{@trial_ends}"}
-      preview={"Upgrade to #{@plan} to keep everything you've built in #{@product_name}."}
+      preview={@preview || "Upgrade to #{@plan} to keep everything you've built in #{@product_name}."}
+      lang={@lang}
+      dir={@dir}
     >
       <.header logo={@logo} logo_alt={@product_name} title={@product_name} href={@product_url} />
       <.card padding="32px 0">

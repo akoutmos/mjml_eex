@@ -30,7 +30,7 @@
 # Contents
 
 - [Installation](#installation)
-- [Supporting MJML EEx](#supporting-mjml-eex)
+- [Level Up Your Elixir Skills!](#level-up-your-elixir-skills)
 - [Using MJML EEx](#using-mjml-eex)
 - [Guides](#guides)
 - [Attribution](#attribution)
@@ -166,6 +166,7 @@ ready for your content and your theme:
 - [Includes](guides/includes.md)
 - [Validation](guides/validation.md)
 - [Formatting](guides/formatting.md)
+- [Testing and previewing](guides/testing.md)
 - [Configuration](guides/configuration.md)
 - [Telemetry](guides/telemetry.md)
 - [Migrating from 0.x](guides/migrating_from_0x.md)

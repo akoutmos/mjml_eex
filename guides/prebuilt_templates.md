@@ -91,6 +91,18 @@ In many countries, marketing emails need a way to unsubscribe and the sender's p
 newsletter, product launch and flash sale templates require an `:unsubscribe_url` and an `:address`. Both are shown
 in the footer.
 
+Gmail and Yahoo also require bulk senders' marketing emails to have one-click unsubscribe headers
+([RFC 8058](https://www.rfc-editor.org/rfc/rfc8058)). Add them when you send the email:
+
+```elixir
+new()
+|> header("List-Unsubscribe", "<#{unsubscribe_url}>")
+|> header("List-Unsubscribe-Post", "List-Unsubscribe=One-Click")
+```
+
+With `List-Unsubscribe-Post`, email providers unsubscribe the reader by sending a `POST` request to the URL, so it
+has to accept one without a login or a confirmation page.
+
 ### Preview text and language
 
 Every template takes a `:preview`, the text that inboxes show after the subject, and has a default for it from your

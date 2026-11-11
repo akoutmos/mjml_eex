@@ -137,3 +137,4 @@ end
 - [Prebuilt templates](prebuilt_templates.md): complete emails for password resets, invoices, newsletters and more.
 - [Layouts](layouts.md): share the head and the outer structure of your emails.
 - [Validation](validation.md): what's checked at compile time, and how to configure it.
+- [Testing and previewing](testing.md): test your emails, and see them in development.
